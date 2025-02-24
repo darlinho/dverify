@@ -88,9 +88,11 @@ These implementations ensure **scalability, high availability, and decentralized
 ### 1. Add the Dependency
 
 For **Maven**:
+
 ```xml
+
 <dependency>
-    <groupId>com.kunrin.kita</groupId>
+    <groupId>com.kunrin.assent</groupId>
     <artifactId>tokens-verifier</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -98,7 +100,7 @@ For **Maven**:
 
 For **Gradle**:
 ```gradle
-implementation 'com.kunrin.kita:tokens-verifier:1.0.0'
+implementation 'com.kunrin.assent:tokens-verifier:1.0.0'
 ```
 
 ### 2. Configure Kafka Properties

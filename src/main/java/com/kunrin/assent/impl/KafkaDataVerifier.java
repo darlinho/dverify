@@ -1,11 +1,11 @@
-package com.kunrin.kita.impl;
+package com.kunrin.assent.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.kunrin.kita.DataChecker;
-import com.kunrin.kita.exceptions.DataExtractionException;
-import com.kunrin.kita.util.JacksonUtil;
+import com.kunrin.assent.DataVerifier;
+import com.kunrin.assent.exceptions.DataExtractionException;
+import com.kunrin.assent.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
@@ -23,8 +23,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 
-public class KafkaDataChecker implements DataChecker {
-    private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(KafkaDataChecker.class);
+public class KafkaDataVerifier implements DataVerifier {
+    private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(KafkaDataVerifier.class);
     private static final String TOKEN_VERIFIER_TOPIC;
     private static final KeyFactory keyFactory;
 
@@ -42,7 +42,7 @@ public class KafkaDataChecker implements DataChecker {
     private final KafkaConsumer<String, String> consumer;
     private final Cache<String, String> cache;
 
-    public KafkaDataChecker(Properties props) {
+    public KafkaDataVerifier(Properties props) {
         // Configure kafka consumer.
         props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -94,6 +94,7 @@ public class KafkaDataChecker implements DataChecker {
 
             base64Key = cache.getIfPresent(keyId);
             if (base64Key == null) {
+                log.debug("Failed to find public key for keyId: {} from -> {}", keyId, cache);
                 throw new DataExtractionException("Key not found");
             }
         }

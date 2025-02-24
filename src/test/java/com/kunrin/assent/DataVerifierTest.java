@@ -1,0 +1,127 @@
+package com.kunrin.assent;
+
+
+import com.kunrin.assent.exceptions.DataExtractionException;
+import com.kunrin.assent.exceptions.JsonEncodingException;
+import com.kunrin.assent.impl.KafkaDataSigner;
+import com.kunrin.assent.impl.KafkaDataVerifier;
+
+import org.junit.jupiter.api.*;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import java.time.Duration;
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DataVerifierTest {
+
+    private static KafkaContainer kafkaContainer;
+    private DataSigner signer;
+    private DataVerifier verifier;
+
+    @BeforeAll
+    public static void setUpClass() {
+        kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+                .withEmbeddedZookeeper();
+        kafkaContainer.start();
+    }
+
+    @AfterAll
+    public static void tearDownClass() {
+        kafkaContainer.stop();
+    }
+
+    @BeforeEach
+    public void setUp() {
+        // Set up Kafka properties
+        String kafkaBootstrapServers = kafkaContainer.getBootstrapServers();
+        Properties props = new Properties();
+
+        props.setProperty("bootstrap.servers", kafkaBootstrapServers);
+        props.setProperty("group.id", "test");
+//        props.setProperty("enable.auto.commit", "true");
+//        props.setProperty("auto.commit.interval.ms", "1000");
+//        props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+//        props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        signer = new KafkaDataSigner(props); // Mocked properties
+        verifier = new KafkaDataVerifier(props); // Mocked properties
+    }
+
+    @Test
+    public void sign_method_with_valid_data_should_returns_jwt() throws JsonEncodingException {
+        UserData data = new UserData("john.doe@example.com");
+        Duration duration = Duration.ofHours(2);
+
+        String jwt = signer.sign(data, duration);
+
+        assertNotNull(jwt);
+        assertFalse(jwt.isEmpty());
+    }
+
+    @Test
+    public void sign_method_with_invalid_data_should_throws_exception() {
+        Object invalidData = null; // Simulating invalid data
+        Duration duration = Duration.ofHours(2);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, duration));
+    }
+
+    @Test
+    public void sign_method_with_expired_duration_should_throws_exception() {
+        UserData data = new UserData("john.doe@example.com");
+        Duration duration = Duration.ofMinutes(-5); // Negative duration
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(data, duration));
+    }
+
+    @Test
+    public void sign_valid_data_should_returns_jwt() throws JsonEncodingException {
+        UserData data = new UserData("john.doe@example.com");
+        Duration duration = Duration.ofHours(2);
+
+        String jwt = signer.sign(data, duration);
+
+        assertNotNull(jwt, "JWT should not be null");
+        assertFalse(jwt.isEmpty(), "JWT should not be empty");
+    }
+
+    @Test
+    public void sign_invalid_data_should_throws_exception() {
+        Object invalidData = null; // Simulating invalid data
+        Duration duration = Duration.ofHours(2);
+
+        assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, duration));
+    }
+
+    @Test
+    public void verify_valid_token_should_returns_payload() throws InterruptedException {
+        UserData data = new UserData("john.doe@example.com");
+        String jwt = signer.sign(data, Duration.ofHours(2)); // Generate a valid token
+        Thread.sleep(1000); // Wait 1 second to ensure that the keys has been propagated to kafka
+
+        UserData verifiedData = verifier.verify(jwt, UserData.class);
+
+        assertNotNull(verifiedData);
+        assertEquals(data.getEmail(), verifiedData.getEmail());
+    }
+
+    @Test
+    public void verify_invalid_token_should_throws_exception() {
+        String invalidToken = "invalid.jwt.token"; // Simulating an invalid token
+
+        assertThrows(DataExtractionException.class, () -> verifier.verify(invalidToken, UserData.class));
+    }
+
+    @Test
+    public void verify_expired_token_should_throws_exception() throws InterruptedException {
+        UserData data = new UserData("john.doe@example.com");
+        String jwt = signer.sign(data, Duration.ofMillis(1)); // Token with short duration
+        Thread.sleep(10); // Wait for the token to expire
+
+        assertThrows(DataExtractionException.class, () -> verifier.verify(jwt, UserData.class));
+    }
+}
+

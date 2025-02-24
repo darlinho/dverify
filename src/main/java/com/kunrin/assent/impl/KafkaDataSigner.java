@@ -1,12 +1,13 @@
-package com.kunrin.kita.impl;
+package com.kunrin.assent.impl;
 
-import com.kunrin.kita.DataSigner;
-import com.kunrin.kita.exceptions.JsonEncodingException;
-import com.kunrin.kita.util.JacksonUtil;
+import com.kunrin.assent.DataSigner;
+import com.kunrin.assent.exceptions.JsonEncodingException;
+import com.kunrin.assent.util.JacksonUtil;
 import io.jsonwebtoken.Jwts;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Duration;
@@ -48,6 +49,9 @@ public class KafkaDataSigner implements DataSigner {
         props.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         this.producer = new KafkaProducer<>(props);
 
+        // generate the first KeyPair
+        generatedKeysPair();
+
         // Schedule the task to run every minute
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this::generatedKeysPair, 0, KEYS_ROTATION_RATE_MINUTES, TimeUnit.MINUTES);
@@ -55,7 +59,9 @@ public class KafkaDataSigner implements DataSigner {
 
     @Override
     public String sign(Object data, Duration duration) throws JsonEncodingException {
-        final String publicKeyId = UUID.randomUUID().toString();
+        if (data == null || duration == null || duration.isNegative()) {
+            throw new IllegalArgumentException("data should not be null and the duration should be positive");
+        }
 
         // Calculate issued time and expiration time
         Instant fromNow = Instant.now();
@@ -63,6 +69,7 @@ public class KafkaDataSigner implements DataSigner {
         Date expirationDate = Date.from(fromNow.plus(duration));
 
         try {
+            final String publicKeyId = UUID.randomUUID().toString();
             final String token = Jwts.builder()
                     .subject(publicKeyId)
                     .claim("data", JacksonUtil.toJson(data))
