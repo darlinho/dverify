@@ -4,7 +4,13 @@ import com.kunrin.assent.exceptions.DataExtractionException;
 
 @FunctionalInterface
 public interface DataVerifier {
-    /// Retrieve the JSON Web Token's data claims field as an object after successfully verify it.
-    /// @throws DataExtractionException if either the token is not a valid JWT token of it is expired.
+    /**
+     * Validates a JWT and extracts its payload as an object.
+     *
+     * @param token The JWT to be verified.
+     * @param clazz The expected type of the extracted payload.
+     * @return The extracted payload object.
+     * @throws DataExtractionException If the token is invalid or expired.
+     */
     <T> T verify(String token, Class<T> clazz) throws DataExtractionException;
 }

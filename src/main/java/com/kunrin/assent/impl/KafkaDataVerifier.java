@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 
@@ -30,7 +31,7 @@ public class KafkaDataVerifier implements DataVerifier {
 
     static {
         var topic = System.getenv("TOKEN_VERIFIER_TOPIC");
-        TOKEN_VERIFIER_TOPIC = topic != null ? topic:"token-verifier-topic";
+        TOKEN_VERIFIER_TOPIC = topic != null ? topic : Constant.TOKEN_VERIFIER_TOPIC_DEFAULT;
 
         try {
             keyFactory = KeyFactory.getInstance("RSA");
@@ -44,9 +45,7 @@ public class KafkaDataVerifier implements DataVerifier {
 
     public KafkaDataVerifier(Properties props) {
         // Configure kafka consumer.
-        props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        this.consumer = new KafkaConsumer<>(props);
+        this.consumer = new KafkaConsumer<>(overwriteProps(props));
         consumer.subscribe(List.of(TOKEN_VERIFIER_TOPIC));
 
         // configure cache
@@ -54,6 +53,14 @@ public class KafkaDataVerifier implements DataVerifier {
                 .expireAfterWrite(12, TimeUnit.HOURS) // Records expire after 12 hours
                 .maximumSize(1000) // Limit cache size to avoid memory overload
                 .build();
+    }
+
+    private static Properties overwriteProps(Properties props) {
+        props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.setProperty("group.id", UUID.randomUUID().toString());
+        props.setProperty("auto.offset.reset", "earliest");
+        return props;
     }
 
     @Override
@@ -65,7 +72,8 @@ public class KafkaDataVerifier implements DataVerifier {
                     .verifyWith(getPublicKey(keyId))
                     .build()
                     .parseSignedClaims(jwt);
-            return parsedJwt.getPayload().get("data", clazz);
+            final var data = parsedJwt.getPayload().get("data", String.class);
+            return JacksonUtil.fromJson(data, clazz);
         } catch (Exception e) {
             throw new DataExtractionException("Failed to extract subject from JWT: " + e.getMessage());
         }

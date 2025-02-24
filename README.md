@@ -72,7 +72,9 @@ The library includes ready-to-use **Kafka-backed implementations** of these inte
 - **`KafkaDataSigner`** → Handles **JWT signing** and publishes the corresponding **public key**.
 - **`KafkaDataVerifier`** → Listens for public key updates and verifies tokens using the latest available keys.
 
-Each Kafka-based implementation requires **Kafka Properties** to be passed to the constructor.
+Each Kafka-based implementation requires **Kafka Properties** to be passed to the constructor and rely on fasterxml API
+for serialization and deserialization of the data object to be signed/verified
+see https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core.
 
 ### Environment Variables
 

@@ -12,6 +12,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.Properties;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,14 +38,9 @@ public class DataVerifierTest {
     public void setUp() {
         // Set up Kafka properties
         String kafkaBootstrapServers = kafkaContainer.getBootstrapServers();
-        Properties props = new Properties();
 
+        Properties props = new Properties();
         props.setProperty("bootstrap.servers", kafkaBootstrapServers);
-        props.setProperty("group.id", "test");
-//        props.setProperty("enable.auto.commit", "true");
-//        props.setProperty("auto.commit.interval.ms", "1000");
-//        props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-//        props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
         signer = new KafkaDataSigner(props); // Mocked properties
         verifier = new KafkaDataVerifier(props); // Mocked properties
@@ -100,7 +96,7 @@ public class DataVerifierTest {
     public void verify_valid_token_should_returns_payload() throws InterruptedException {
         UserData data = new UserData("john.doe@example.com");
         String jwt = signer.sign(data, Duration.ofHours(2)); // Generate a valid token
-        Thread.sleep(1000); // Wait 1 second to ensure that the keys has been propagated to kafka
+        Thread.sleep(10); // Wait 10 ms to ensure that the keys has been propagated to kafka
 
         UserData verifiedData = verifier.verify(jwt, UserData.class);
 

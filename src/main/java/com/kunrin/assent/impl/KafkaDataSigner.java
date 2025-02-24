@@ -7,7 +7,6 @@ import io.jsonwebtoken.Jwts;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Duration;
@@ -20,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.kunrin.assent.impl.Constant.TOKEN_VERIFIER_TOPIC_DEFAULT;
+
 public class KafkaDataSigner implements DataSigner {
     private static final String TOKEN_VERIFIER_TOPIC;
     private static final long KEYS_ROTATION_RATE_MINUTES;
@@ -27,7 +28,7 @@ public class KafkaDataSigner implements DataSigner {
 
     static {
         var topic = System.getenv("TOKEN_VERIFIER_TOPIC");
-        TOKEN_VERIFIER_TOPIC = topic != null ? topic:"token-verifier-topic";
+        TOKEN_VERIFIER_TOPIC = topic != null ? topic:TOKEN_VERIFIER_TOPIC_DEFAULT;
 
         var rotationRate = System.getenv("KEYS_ROTATION_RATE_MINUTES");
         if (rotationRate != null) {
@@ -103,6 +104,12 @@ public class KafkaDataSigner implements DataSigner {
 
     private void propagatePublicKey(String publicKeyId) {
         String encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        producer.send(new ProducerRecord<>(TOKEN_VERIFIER_TOPIC, publicKeyId, encodedPublicKey));
+        producer.send(new ProducerRecord<>(TOKEN_VERIFIER_TOPIC, publicKeyId, encodedPublicKey), (metadata, exception) -> {
+            if (exception == null) {
+                log.debug("Public key sent to Kafka successfully with offset: {}", metadata.offset());
+            } else {
+                log.error("Error sending the public key to kafka: {}", metadata.offset());
+            }
+        });
     }
 }
