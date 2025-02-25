@@ -107,7 +107,7 @@ For **Gradle**:
 implementation 'io.github.cyfko:assent:1.0.0'
 ```
 
-### 2. Configure Kafka Properties
+### 2. Configure Kafka Properties 
 
 Ensure Kafka is configured in **`application.properties`**:
 ```properties
