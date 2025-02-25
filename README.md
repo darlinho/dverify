@@ -96,15 +96,15 @@ For **Maven**:
 ```xml
 
 <dependency>
-    <groupId>com.kunrin.assent</groupId>
-    <artifactId>tokens-verifier</artifactId>
+    <groupId>io.github.cyfko</groupId>
+    <artifactId>assent</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
 
 For **Gradle**:
 ```gradle
-implementation 'com.kunrin.assent:tokens-verifier:1.0.0'
+implementation 'io.github.cyfko:assent:1.0.0'
 ```
 
 ### 2. Configure Kafka Properties
