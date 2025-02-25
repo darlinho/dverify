@@ -1,4 +1,4 @@
-package com.kunrin.assent.impl;
+package io.github.cyfko.assent.impl;
 
 /// Provide defaults to some constants.
 abstract class ConstantDefault{

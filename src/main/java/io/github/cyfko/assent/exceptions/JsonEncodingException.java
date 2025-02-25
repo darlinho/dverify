@@ -1,4 +1,4 @@
-package com.kunrin.assent.exceptions;
+package io.github.cyfko.assent.exceptions;
 
 public class JsonEncodingException extends RuntimeException {
     public JsonEncodingException(String message) {

@@ -1,4 +1,4 @@
-package com.kunrin.assent.impl;
+package io.github.cyfko.assent.impl;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

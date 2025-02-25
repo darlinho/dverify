@@ -1,4 +1,4 @@
-package com.kunrin.assent.util;
+package io.github.cyfko.assent.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

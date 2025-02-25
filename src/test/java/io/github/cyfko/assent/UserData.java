@@ -1,4 +1,4 @@
-package com.kunrin.assent;
+package io.github.cyfko.assent;
 
 public class UserData {
     private String email;

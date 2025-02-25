@@ -1,6 +1,6 @@
-package com.kunrin.assent;
+package io.github.cyfko.assent;
 
-import com.kunrin.assent.exceptions.DataExtractionException;
+import io.github.cyfko.assent.exceptions.DataExtractionException;
 
 @FunctionalInterface
 public interface DataVerifier {

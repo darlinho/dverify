@@ -1,6 +1,6 @@
-package com.kunrin.assent;
+package io.github.cyfko.assent;
 
-import com.kunrin.assent.exceptions.JsonEncodingException;
+import io.github.cyfko.assent.exceptions.JsonEncodingException;
 
 import java.time.Duration;
 

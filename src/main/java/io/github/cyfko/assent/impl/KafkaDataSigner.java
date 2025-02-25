@@ -1,8 +1,8 @@
-package com.kunrin.assent.impl;
+package io.github.cyfko.assent.impl;
 
-import com.kunrin.assent.DataSigner;
-import com.kunrin.assent.exceptions.JsonEncodingException;
-import com.kunrin.assent.util.JacksonUtil;
+import io.github.cyfko.assent.DataSigner;
+import io.github.cyfko.assent.exceptions.JsonEncodingException;
+import io.github.cyfko.assent.util.JacksonUtil;
 import io.jsonwebtoken.Jwts;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;

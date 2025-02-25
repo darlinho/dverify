@@ -1,11 +1,11 @@
-package com.kunrin.assent.impl;
+package io.github.cyfko.assent.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.kunrin.assent.DataVerifier;
-import com.kunrin.assent.exceptions.DataExtractionException;
-import com.kunrin.assent.util.JacksonUtil;
+import io.github.cyfko.assent.DataVerifier;
+import io.github.cyfko.assent.exceptions.DataExtractionException;
+import io.github.cyfko.assent.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;

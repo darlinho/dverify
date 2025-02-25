@@ -1,10 +1,10 @@
-package com.kunrin.assent;
+package io.github.cyfko.assent;
 
 
-import com.kunrin.assent.exceptions.DataExtractionException;
-import com.kunrin.assent.exceptions.JsonEncodingException;
-import com.kunrin.assent.impl.KafkaDataSigner;
-import com.kunrin.assent.impl.KafkaDataVerifier;
+import io.github.cyfko.assent.exceptions.DataExtractionException;
+import io.github.cyfko.assent.exceptions.JsonEncodingException;
+import io.github.cyfko.assent.impl.KafkaDataSigner;
+import io.github.cyfko.assent.impl.KafkaDataVerifier;
 
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.KafkaContainer;
