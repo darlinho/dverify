@@ -9,6 +9,7 @@ import com.kunrin.assent.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
@@ -21,18 +22,15 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 
 public class KafkaDataVerifier implements DataVerifier {
     private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(KafkaDataVerifier.class);
-    private static final String TOKEN_VERIFIER_TOPIC;
     private static final KeyFactory keyFactory;
+    private final KafkaConsumer<String, String> consumer;
+    private final Cache<String, String> cache;
 
     static {
-        var topic = System.getenv("TOKEN_VERIFIER_TOPIC");
-        TOKEN_VERIFIER_TOPIC = topic != null ? topic : Constant.TOKEN_VERIFIER_TOPIC_DEFAULT;
-
         try {
             keyFactory = KeyFactory.getInstance("RSA");
         } catch (Exception e) {
@@ -40,27 +38,32 @@ public class KafkaDataVerifier implements DataVerifier {
         }
     }
 
-    private final KafkaConsumer<String, String> consumer;
-    private final Cache<String, String> cache;
+    private static Properties initProperties() {
+        Properties props = new Properties();
+        props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        return props;
+    }
 
-    public KafkaDataVerifier(Properties props) {
-        // Configure kafka consumer.
-        this.consumer = new KafkaConsumer<>(overwriteProps(props));
-        consumer.subscribe(List.of(TOKEN_VERIFIER_TOPIC));
+    public KafkaDataVerifier() {
+        this(initProperties());
+    }
+
+    public KafkaDataVerifier(String boostrapServers) {
+        this(PropertiesUtil.of(initProperties(), boostrapServers));
+    }
+
+    private KafkaDataVerifier(Properties props) {
+        this.consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(List.of(Constant.KAFKA_TOKEN_VERIFIER_TOPIC));
 
         // configure cache
         this.cache = Caffeine.newBuilder()
-                .expireAfterWrite(12, TimeUnit.HOURS) // Records expire after 12 hours
                 .maximumSize(1000) // Limit cache size to avoid memory overload
                 .build();
-    }
-
-    private static Properties overwriteProps(Properties props) {
-        props.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.setProperty("group.id", UUID.randomUUID().toString());
-        props.setProperty("auto.offset.reset", "earliest");
-        return props;
     }
 
     @Override

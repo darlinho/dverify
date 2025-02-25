@@ -11,8 +11,6 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
-import java.util.Properties;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,14 +34,9 @@ public class DataVerifierTest {
 
     @BeforeEach
     public void setUp() {
-        // Set up Kafka properties
         String kafkaBootstrapServers = kafkaContainer.getBootstrapServers();
-
-        Properties props = new Properties();
-        props.setProperty("bootstrap.servers", kafkaBootstrapServers);
-
-        signer = new KafkaDataSigner(props); // Mocked properties
-        verifier = new KafkaDataVerifier(props); // Mocked properties
+        signer = new KafkaDataSigner(kafkaBootstrapServers); // Mocked properties
+        verifier = new KafkaDataVerifier(kafkaBootstrapServers); // Mocked properties
     }
 
     @Test

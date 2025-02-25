@@ -80,8 +80,10 @@ see https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core.
 
 The following environment variables allow customization of the Kafka-based implementation:
 
-- **`TOKEN_VERIFIER_TOPIC`**: The Kafka topic for token verification messages (default: `token-verifier-topic`).
-- **`KEYS_ROTATION_RATE_MINUTES`**: The interval in minutes for rotating public keys (default: `30`).
+- **`AST_KAFKA_BOOSTRAP_SERVERS`**: The Kafka boostrap servers. Comma-delimited list of `host:port` pairs to use for 
+  establishing the initial connections to the Kafka cluster. *Default to `localhost:9092`*
+- **`AST_TOKEN_VERIFIER_TOPIC`**: The Kafka topic for token verification messages. *Default to `token-verifier-topic`*.
+- **`AST_KEYS_ROTATION_MINUTES`**: The interval in minutes for rotating public keys. *Default to `30`*.
 
 These implementations ensure **scalability, high availability, and decentralized verification** in a microservices ecosystem.
 
@@ -117,14 +119,14 @@ kafka.public-key-topic=tokens-public-keys
 
 #### Signing a Token
 ```java
-DataSigner signer = new KafkaDataSigner(kafkaProperties);
+DataSigner signer = new KafkaDataSigner(); // will use the default config
 String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
 System.out.println("Generated Token: " + jwt);
 ```
 
 #### Verifying a Token
 ```java
-DataVerifier verifier = new KafkaDataVerifier(kafkaProperties);
+DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
 UserData userData = verifier.verify(jwt, UserData.class);
 System.out.println("Verified Data: " + userData.getEmail());
 ```

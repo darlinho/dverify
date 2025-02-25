@@ -19,35 +19,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.kunrin.assent.impl.Constant.TOKEN_VERIFIER_TOPIC_DEFAULT;
 
 public class KafkaDataSigner implements DataSigner {
-    private static final String TOKEN_VERIFIER_TOPIC;
-    private static final long KEYS_ROTATION_RATE_MINUTES;
     private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(KafkaDataSigner.class);
-
-    static {
-        var topic = System.getenv("TOKEN_VERIFIER_TOPIC");
-        TOKEN_VERIFIER_TOPIC = topic != null ? topic:TOKEN_VERIFIER_TOPIC_DEFAULT;
-
-        var rotationRate = System.getenv("KEYS_ROTATION_RATE_MINUTES");
-        if (rotationRate != null) {
-            KEYS_ROTATION_RATE_MINUTES = Long.parseLong(rotationRate);
-        } else {
-            KEYS_ROTATION_RATE_MINUTES = 30L;
-        }
-    }
-
     private final ScheduledExecutorService scheduler;
     private final KafkaProducer<String,String> producer;
     private long lastExecutionTime = 0;
     private KeyPair keyPair;
 
+    private static Properties initProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("bootstrap.servers", Constant.KAFKA_BOOSTRAP_SERVERS);
+        properties.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        properties.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        return properties;
+    }
 
-    public KafkaDataSigner(final Properties props) {
-        // overwrite these two properties
-        props.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    public KafkaDataSigner() {
+        this(initProperties());
+    }
+
+    public KafkaDataSigner(String boostrapServers) {
+        this(PropertiesUtil.of(initProperties(), boostrapServers));
+    }
+
+    private KafkaDataSigner(Properties props) {
         this.producer = new KafkaProducer<>(props);
 
         // generate the first KeyPair
@@ -55,7 +51,7 @@ public class KafkaDataSigner implements DataSigner {
 
         // Schedule the task to run every minute
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this::generatedKeysPair, 0, KEYS_ROTATION_RATE_MINUTES, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(this::generatedKeysPair, 0, Constant.KEYS_ROTATION_MINUTES, TimeUnit.MINUTES);
     }
 
     @Override
@@ -89,7 +85,7 @@ public class KafkaDataSigner implements DataSigner {
         long currentTime = System.currentTimeMillis();
 
         // Check if the last execution was within the last KEYS_ROTATION_RATE_MINUTES
-        if (currentTime - lastExecutionTime >= KEYS_ROTATION_RATE_MINUTES * 60 * 1000 || lastExecutionTime == 0) {
+        if (currentTime - lastExecutionTime >= Constant.KEYS_ROTATION_MINUTES * 60 * 1000 || lastExecutionTime == 0) {
             try {
                 KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
                 keyPairGenerator.initialize(2048);
@@ -104,7 +100,7 @@ public class KafkaDataSigner implements DataSigner {
 
     private void propagatePublicKey(String publicKeyId) {
         String encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        producer.send(new ProducerRecord<>(TOKEN_VERIFIER_TOPIC, publicKeyId, encodedPublicKey), (metadata, exception) -> {
+        producer.send(new ProducerRecord<>(Constant.KAFKA_TOKEN_VERIFIER_TOPIC, publicKeyId, encodedPublicKey), (metadata, exception) -> {
             if (exception == null) {
                 log.debug("Public key sent to Kafka successfully with offset: {}", metadata.offset());
             } else {
