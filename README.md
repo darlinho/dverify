@@ -1,6 +1,7 @@
-# Tokens Verifier
+# Distributed Tokens Verification
 
-A lightweight library that simplifies token verification in microservices architectures, ensuring secure token propagation and validation.
+A lightweight library that simplifies token verification in microservices architectures where any service may need to
+verify any incoming token.
 
 ## Motivation
 
@@ -97,14 +98,14 @@ For **Maven**:
 
 <dependency>
     <groupId>io.github.cyfko</groupId>
-    <artifactId>assent</artifactId>
+    <artifactId>disver</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
 
 For **Gradle**:
 ```gradle
-implementation 'io.github.cyfko:assent:1.0.0'
+implementation 'io.github.cyfko:disver:1.0.0'
 ```
 
 ### 2. Configure Kafka Properties 
