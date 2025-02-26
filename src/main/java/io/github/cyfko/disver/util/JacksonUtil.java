@@ -1,4 +1,4 @@
-package io.github.cyfko.assent.util;
+package io.github.cyfko.disver.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

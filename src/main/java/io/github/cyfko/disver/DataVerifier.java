@@ -1,6 +1,6 @@
-package io.github.cyfko.assent;
+package io.github.cyfko.disver;
 
-import io.github.cyfko.assent.exceptions.DataExtractionException;
+import io.github.cyfko.disver.exceptions.DataExtractionException;
 
 @FunctionalInterface
 public interface DataVerifier {

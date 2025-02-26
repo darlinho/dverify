@@ -1,6 +1,6 @@
-package io.github.cyfko.assent;
+package io.github.cyfko.disver;
 
-import io.github.cyfko.assent.exceptions.JsonEncodingException;
+import io.github.cyfko.disver.exceptions.JsonEncodingException;
 
 import java.time.Duration;
 

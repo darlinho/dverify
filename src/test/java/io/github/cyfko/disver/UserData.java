@@ -1,4 +1,4 @@
-package io.github.cyfko.assent;
+package io.github.cyfko.disver;
 
 public class UserData {
     private String email;

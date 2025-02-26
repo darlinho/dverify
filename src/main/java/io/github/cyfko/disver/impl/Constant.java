@@ -1,4 +1,4 @@
-package io.github.cyfko.assent.impl;
+package io.github.cyfko.disver.impl;
 
 /// Provide defaults to some constants.
 abstract class ConstantDefault{

@@ -1,11 +1,11 @@
-package io.github.cyfko.assent.impl;
+package io.github.cyfko.disver.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.cyfko.assent.DataVerifier;
-import io.github.cyfko.assent.exceptions.DataExtractionException;
-import io.github.cyfko.assent.util.JacksonUtil;
+import io.github.cyfko.disver.DataVerifier;
+import io.github.cyfko.disver.exceptions.DataExtractionException;
+import io.github.cyfko.disver.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
@@ -40,6 +40,7 @@ public class KafkaDataVerifier implements DataVerifier {
 
     private static Properties initProperties() {
         Properties props = new Properties();
+        props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Constant.KAFKA_BOOSTRAP_SERVERS);
         props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
@@ -48,10 +49,13 @@ public class KafkaDataVerifier implements DataVerifier {
         return props;
     }
 
+    /// Construct a KafkaDataVerifier with environment variable properties and default ones.
     public KafkaDataVerifier() {
         this(initProperties());
     }
 
+    /// Construct a KafkaDataVerifier with environment properties (and defaults ones) using the provided `boostrapServers`.
+    /// @param boostrapServers the value to assign to the property `ProducerConfig.BOOTSTRAP_SERVERS_CONFIG`.
     public KafkaDataVerifier(String boostrapServers) {
         this(PropertiesUtil.of(initProperties(), boostrapServers));
     }

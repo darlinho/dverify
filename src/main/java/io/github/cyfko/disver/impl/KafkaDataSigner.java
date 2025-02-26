@@ -1,10 +1,11 @@
-package io.github.cyfko.assent.impl;
+package io.github.cyfko.disver.impl;
 
-import io.github.cyfko.assent.DataSigner;
-import io.github.cyfko.assent.exceptions.JsonEncodingException;
-import io.github.cyfko.assent.util.JacksonUtil;
+import io.github.cyfko.disver.DataSigner;
+import io.github.cyfko.disver.exceptions.JsonEncodingException;
+import io.github.cyfko.disver.util.JacksonUtil;
 import io.jsonwebtoken.Jwts;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.security.KeyPair;
@@ -29,16 +30,19 @@ public class KafkaDataSigner implements DataSigner {
 
     private static Properties initProperties() {
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", Constant.KAFKA_BOOSTRAP_SERVERS);
-        properties.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        properties.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Constant.KAFKA_BOOSTRAP_SERVERS);
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         return properties;
     }
 
+    /// Construct a KafkaDataSigner with environment properties and defaults ones.
     public KafkaDataSigner() {
         this(initProperties());
     }
 
+    /// Construct a KafkaDataSigner with environment properties (and defaults ones) using the provided `boostrapServers`.
+    /// @param boostrapServers the value to assign to the property `ProducerConfig.BOOTSTRAP_SERVERS_CONFIG`.
     public KafkaDataSigner(String boostrapServers) {
         this(PropertiesUtil.of(initProperties(), boostrapServers));
     }

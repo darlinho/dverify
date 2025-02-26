@@ -1,10 +1,10 @@
-package io.github.cyfko.assent;
+package io.github.cyfko.disver;
 
 
-import io.github.cyfko.assent.exceptions.DataExtractionException;
-import io.github.cyfko.assent.exceptions.JsonEncodingException;
-import io.github.cyfko.assent.impl.KafkaDataSigner;
-import io.github.cyfko.assent.impl.KafkaDataVerifier;
+import io.github.cyfko.disver.exceptions.DataExtractionException;
+import io.github.cyfko.disver.exceptions.JsonEncodingException;
+import io.github.cyfko.disver.impl.KafkaDataSigner;
+import io.github.cyfko.disver.impl.KafkaDataVerifier;
 
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.KafkaContainer;
