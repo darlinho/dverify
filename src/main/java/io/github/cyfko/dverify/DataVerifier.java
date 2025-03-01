@@ -1,6 +1,6 @@
-package io.github.cyfko.disver;
+package io.github.cyfko.dverify;
 
-import io.github.cyfko.disver.exceptions.DataExtractionException;
+import io.github.cyfko.dverify.exceptions.DataExtractionException;
 
 @FunctionalInterface
 public interface DataVerifier {

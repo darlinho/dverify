@@ -1,16 +1,23 @@
-package io.github.cyfko.disver;
+package io.github.cyfko.dverify;
 
 
-import io.github.cyfko.disver.exceptions.DataExtractionException;
-import io.github.cyfko.disver.exceptions.JsonEncodingException;
-import io.github.cyfko.disver.impl.KafkaDataSigner;
-import io.github.cyfko.disver.impl.KafkaDataVerifier;
+import io.github.cyfko.dverify.exceptions.DataExtractionException;
+import io.github.cyfko.dverify.exceptions.JsonEncodingException;
+import io.github.cyfko.dverify.impl.kafka.KafkaDataSigner;
+import io.github.cyfko.dverify.impl.kafka.KafkaDataVerifier;
 
+import io.github.cyfko.dverify.impl.kafka.VerifierConfig;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Properties;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,6 +26,7 @@ public class DataVerifierTest {
     private static KafkaContainer kafkaContainer;
     private DataSigner signer;
     private DataVerifier verifier;
+    private File tempDir;
 
     @BeforeAll
     public static void setUpClass() {
@@ -33,10 +41,24 @@ public class DataVerifierTest {
     }
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws IOException {
         String kafkaBootstrapServers = kafkaContainer.getBootstrapServers();
-        signer = new KafkaDataSigner(kafkaBootstrapServers); // Mocked properties
-        verifier = new KafkaDataVerifier(kafkaBootstrapServers); // Mocked properties
+
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+
+        tempDir = Files.createTempDirectory("rocksdb_db_test_").toFile();
+        props.put(VerifierConfig.EMBEDDED_DB_PATH_CONFIG, tempDir.getAbsolutePath());
+
+        signer = KafkaDataSigner.of(props);
+        verifier = KafkaDataVerifier.of(props);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        if (tempDir.exists()) {
+            tempDir.delete();
+        }
     }
 
     @Test

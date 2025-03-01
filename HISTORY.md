@@ -1,0 +1,22 @@
+# DVerify Change Log
+
+## 2.0.0 (01/03/2025)
+### Public API Changes
+* Moving main package to `io.github.cyfko.dverify` Package
+
+### Behavior Changes
+* Using `RocksDB` for persistence instead of relying on the cache mechanism. It prevents from reading Kafka messages from the beginning when the cache is evicting some entries.
+* Autocommit offsets when consumming kafka messages. Rely on `RocksDB` as the first lookup mechanism.
+
+### Bug Fixes
+* Some bugs fixed.
+
+## 1.1.0 (26/02/2025)
+### Public API Changes
+* Moving main package to `io.github.cyfko.disver` Package
+
+### Bug Fixes
+* Fix some bugs in `KafkaDataVerifier`.
+
+## 1.0.0 (25/02/2025)
+Initial Release

@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.cyfko</groupId>
-    <artifactId>disver</artifactId>
-    <version>1.1</version>
+    <artifactId>dverify</artifactId>
+    <version>2.0.0</version>
 
     <name>Distributed Tokens Verification</name>
     <description>A lightweight library that simplifies token verification in microservices architectures where any
         service may need to verify any incoming token.
     </description>
-    <url>https://github.com/cyfko/disver.git</url>
+    <url>https://github.com/cyfko/dverify.git</url>
 
     <licenses>
         <license>
@@ -25,15 +25,15 @@
         <developer>
             <name>Cyrille KOSSI</name>
             <email>kossi.cyrille@gmail.com</email>
-            <organization>Kunrin S.A</organization>
-            <organizationUrl>http://www.kunrin.com</organizationUrl>
+            <organization>Kunrin SA</organization>
+            <organizationUrl>https://www.kunrin.com</organizationUrl>
         </developer>
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/cyfko/disver.git</connection>
-        <developerConnection>scm:git:ssh://github.com:cyfko/disver.git</developerConnection>
-        <url>https://github.com/cyfko/disver/tree/master</url>
+        <connection>scm:git:git://github.com/cyfko/dverify.git</connection>
+        <developerConnection>scm:git:ssh://github.com:cyfko/dverify.git</developerConnection>
+        <url>https://github.com/cyfko/dverify/tree/master</url>
     </scm>
 
     <dependencies>
@@ -57,10 +57,11 @@
             <artifactId>slf4j-api</artifactId>
             <version>2.0.16</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.rocksdb/rocksdbjni -->
         <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>3.1.8</version>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
+            <version>9.10.0</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

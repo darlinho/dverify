@@ -1,4 +1,4 @@
-package io.github.cyfko.disver;
+package io.github.cyfko.dverify;
 
 public class UserData {
     private String email;

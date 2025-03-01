@@ -1,6 +1,6 @@
-package io.github.cyfko.disver;
+package io.github.cyfko.dverify;
 
-import io.github.cyfko.disver.exceptions.JsonEncodingException;
+import io.github.cyfko.dverify.exceptions.JsonEncodingException;
 
 import java.time.Duration;
 

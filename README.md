@@ -98,14 +98,14 @@ For **Maven**:
 
 <dependency>
     <groupId>io.github.cyfko</groupId>
-    <artifactId>disver</artifactId>
-    <version>1.0.0</version>
+    <artifactId>dverify</artifactId>
+    <version>2.0.0</version>
 </dependency>
 ```
 
 For **Gradle**:
 ```gradle
-implementation 'io.github.cyfko:disver:1.0.0'
+implementation 'io.github.cyfko:dverify:2.0.0'
 ```
 
 ### 2. Configure Kafka Properties 
