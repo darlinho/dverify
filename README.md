@@ -153,7 +153,7 @@ kafka.public-key-topic=tokens-public-keys
     System.out.println("Generated ID: "+uniqueId);
     ```
 
-  ##### Verifying the JWT token
+  ##### Verifying the Identity token
     ```java
     DataVerifier verifier = new KafkaDataVerifier(); // The verifier does not have to change to accommodate to the generated token type!
     UserData userData = verifier.verify(uniqueId, UserData.class);
