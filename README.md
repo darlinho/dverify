@@ -1,95 +1,26 @@
-# Distributed Tokens Verification
+# DVerify (Distributed Token Verification)
+Secure & Lightweight Token Verification for Microservices
 
-A lightweight library that simplifies token verification in microservices architectures where any service may need to
-verify any incoming token.
+## 🚀 Overview
 
-## Motivation
+DVerify is an open-source token verification library designed to simplify authentication in microservices architectures. 
 
-In a microservices environment, each service must ensure the authenticity and integrity of data received from others. **JWT (JSON Web Tokens)** are commonly used for secure data transmission between microservices. However, verifying these tokens reliably introduces several challenges:
+In distributed systems, where services constantly communicate, ensuring authenticity and data integrity is critical. 
 
-- **Authentication & Authorization**: JWT Bearer tokens validate user identity and permissions.
-- **Secure Resource Access**: Tokens facilitate secure downloads outside the web app, such as email-based download links.
-- **Password Reset Links**: Secure links embedded in emails for resetting passwords.
+DVerify provides a lightweight, efficient, and developer-friendly solution to verify JSON Web Tokens (JWTs) and other token types across services.
 
-A **centralized** microservice responsible for both **issuing and verifying tokens** might seem like an intuitive solution. However, this approach introduces **scalability concerns**:
+## ✨ Features
 
-- It creates a **bottleneck** as all other services must make HTTP requests to validate tokens.
-- High **availability** issues arise if a single instance is responsible for verification.
-- Even if availability is addressed, **resilience** remains a concern—how do we ensure seamless token verification if the central service fails?
+- ✅ Lightweight & Fast – Minimal overhead for seamless integration.
+- ✅ Supports Multiple Token Types – Primarily designed for JWTs, but adaptable.
+- ✅ Ensures Secure Communication – Verifies token authenticity to prevent tampering.
+- ✅ Scales with Your Microservices – Works across distributed service environments.
+- ✅ Developer-Friendly API – Easy-to-use and integrates smoothly.
 
-## Design
+## 📦 Installation
 
-To avoid the limitations of a centralized **Key Management System (KMS)**, our approach ensures:
+To install DVerify, follow these steps:
 
-- **Decentralized Signing & Verification**: Any microservice can act as a **token signer** and/or a **token verifier**.
-- **Public Key Propagation**: Tokens are signed with an **asymmetric key pair**, and the **public key** is propagated for verification.
-- **High Availability & Resilience**: Public keys are distributed efficiently using a **message broker (Kafka)**, ensuring high performance and reliability.
-
-### Security Consideration
-
-The system using this library must secure its **Kafka broker infrastructure** to prevent unauthorized access.
-
-## API Overview
-
-This library provides a simple, intuitive API through two primary interfaces:
-
-### Signing Tokens (`DataSigner`)
-```java
-@FunctionalInterface
-public interface DataSigner {
-  /**
-   * Generates a JWT signed with an asymmetric private key.
-   * The `data` parameter is embedded within the token.
-   *
-   * @param data The object to be included in the JWT payload.
-   * @param duration The validity duration of the token.
-   * @return A signed JWT as a string.
-   * @throws JsonEncodingException If JSON encoding fails.
-   */
-  String sign(Object data, Duration duration) throws JsonEncodingException;
-}
-```
-
-### Verifying Tokens (`DataVerifier`)
-```java
-@FunctionalInterface
-public interface DataVerifier {
-  /**
-   * Validates a JWT and extracts its payload as an object.
-   *
-   * @param token The JWT to be verified.
-   * @param clazz The expected type of the extracted payload.
-   * @return The extracted payload object.
-   * @throws DataExtractionException If the token is invalid or expired.
-   */
-  <T> T verify(String token, Class<T> clazz) throws DataExtractionException;
-}
-```
-
-## Kafka-Based Implementation
-
-The library includes ready-to-use **Kafka-backed implementations** of these interfaces:
-
-- **`KafkaDataSigner`** → Handles **JWT signing** and publishes the corresponding **public key**.
-- **`KafkaDataVerifier`** → Listens for public key updates and verifies tokens using the latest available keys.
-
-Each Kafka-based implementation requires **Kafka Properties** to be passed to the constructor and rely on fasterxml API
-for serialization and deserialization of the data object to be signed/verified
-see https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core.
-
-### Environment Variables
-
-The following environment variables allow customization of the Kafka-based implementation:
-
-- **`DVER_KAFKA_BOOSTRAP_SERVERS`**: The Kafka boostrap servers. Comma-delimited list of `host:port` pairs to use for 
-  establishing the initial connections to the Kafka cluster. *Default to `localhost:9092`*
-- **`DVER_TOKEN_VERIFIER_TOPIC`**: The Kafka topic for token verification messages. *Default to `token-verifier-topic`*.
-- **`DVER_EMBEDDED_DATABASE_PATH`**: The path to the RocksDB directory. *Default to `dverify_db_data`*.
-- **`DVER_KEYS_ROTATION_MINUTES`**: The interval in minutes for rotating public keys. *Default to `30`*.
-
-These implementations ensure **scalability, high availability, and decentralized verification** in a microservices ecosystem.
-
-## Getting Started
 
 ### 1. Add the Dependency
 
@@ -106,13 +37,16 @@ For **Maven**:
 
 For **Gradle**:
 ```gradle
-implementation 'io.github.cyfko:dverify:2.0.0'
+implementation 'io.github.cyfko:dverify:2.1.0'
 ```
 
-### 2. Usage Example
-- #### 2.1 Transform a data to/from a JWT token
-    ##### Signing the data
-    
+## 🚀 Usage
+
+🔑 Basic Token Verification
+
+- ### 1. Transform a data to a JWT token to secure it
+  #### Signing the data
+
     ```java
     import java.util.Properties;
     
@@ -123,15 +57,15 @@ implementation 'io.github.cyfko:dverify:2.0.0'
     String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
     System.out.println("Generated Token: "+jwt);
     ```
-    
-    ##### Verifying the JWT token
+
+  #### Verifying the JWT token
     ```java
     DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
     UserData userData = verifier.verify(jwt, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
-- #### 2.2 Transform a data to/from a unique identifier
-  ##### Signing the data
+- ### 2 Transform a data to a unique identifier to secure it but without exposing details
+  #### Signing the data
 
     ```java
     import java.util.Properties;
@@ -145,26 +79,77 @@ implementation 'io.github.cyfko:dverify:2.0.0'
     System.out.println("Generated ID: "+uniqueId);
     ```
 
-  ##### Verifying the Identity token
+  #### Verifying the Identity token
     ```java
     DataVerifier verifier = new KafkaDataVerifier(); // The verifier does not have to change to accommodate to the generated token type!
     UserData userData = verifier.verify(uniqueId, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
 
-### 3. Running Kafka Locally (For Testing)
+## 🌍 Advanced Use Cases
 
-Use **Docker** to start a local Kafka instance:
-```sh
-docker run -d --name kafka -p 9092:9092 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 \
-           -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 wurstmeister/kafka
+- 1️⃣ Authentication & Authorization
+
+Validate user identities and permissions with JWTs.
+Ensure only authorized users can access specific services.
+
+
+- 2️⃣ Secure API Requests Between Microservices
+
+Verify inter-service requests by validating tokens before processing.
+Prevent unauthorized access to sensitive endpoints.
+
+
+- 3️⃣ Token-Based Resource Access
+
+Enable secure document downloads outside the web application (e.g., sending download links via email with token verification).
+Protect API endpoints with short-lived or refreshable tokens.
+
+
+- 4️⃣ Identity Verification for Decentralized Applications
+
+Verify self-sovereign identities (SSI) using decentralized ID tokens.
+Authenticate users across blockchain-based or federated identity systems.
+
+
+## 🏗 Who Can Benefit?
+
+- 👨‍💻 Developers & Architects – Simplify token authentication across microservices.
+- 🏢 Organizations – Strengthen security & ensure trusted communication.
+- 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
+
+## 🛠 Contributing
+
+We welcome contributions from the community! Follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+
+```shell
+git checkout -b feature/your-feature
 ```
 
-### 5. Secure Your Kafka Infrastructure
+3. Commit your changes
 
-For production environments, **ensure**:
+```shell
+git commit -m "Added new feature"
+```
 
-- ✅ Proper **authentication & authorization** (e.g., **SASL, TLS**)
-- ✅ Restricted **topic access permissions**
-- ✅ Secure **message retention policies**
+4. Push and create a pull request
 
+```shell
+git push origin feature/your-feature
+```
+
+## 📖 Check the CONTRIBUTING.md for detailed guidelines.
+
+📜 License
+
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
+## 📢 Get Involved!
+
+💬 Have feedback or ideas? Let’s build a secure and efficient token verification system together!
+
+📌 GitHub: https://github.com/cyfko/dverify
+📧 Contact: your.email@example.com
