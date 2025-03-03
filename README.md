@@ -109,16 +109,8 @@ For **Gradle**:
 implementation 'io.github.cyfko:dverify:2.0.0'
 ```
 
-### 2. Configure Kafka Properties 
-
-Ensure Kafka is configured in **`application.properties`**:
-```properties
-kafka.bootstrap-servers=localhost:9092
-kafka.public-key-topic=tokens-public-keys
-```
-
-### 3. Usage Example
-- #### 3.1 Transform a data to/from a JWT token
+### 2. Usage Example
+- #### 2.1 Transform a data to/from a JWT token
     ##### Signing the data
     
     ```java
@@ -138,7 +130,7 @@ kafka.public-key-topic=tokens-public-keys
     UserData userData = verifier.verify(jwt, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
-- #### 3.2 Transform a data to/from a unique identifier
+- #### 2.2 Transform a data to/from a unique identifier
   ##### Signing the data
 
     ```java
@@ -160,7 +152,7 @@ kafka.public-key-topic=tokens-public-keys
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
 
-### 4. Running Kafka Locally (For Testing)
+### 3. Running Kafka Locally (For Testing)
 
 Use **Docker** to start a local Kafka instance:
 ```sh
