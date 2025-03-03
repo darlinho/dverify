@@ -6,7 +6,7 @@
 
     <groupId>io.github.cyfko</groupId>
     <artifactId>dverify</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 
     <name>Distributed Tokens Verification</name>
     <description>A lightweight library that simplifies token verification in microservices architectures where any

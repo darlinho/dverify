@@ -1,5 +1,9 @@
 # DVerify Change Log
 
+## 2.1.0 (03/03/2025)
+### Behavior Changes
+* Obtain UUID tokens instead of JWT by constructing a KafkaDataSigner with the property name `SignerConfig.GENERATED_TOKEN_CONFIG` mapped to the value `Constant.GENERATED_TOKEN_IDENTITY`.
+
 ## 2.0.0 (01/03/2025)
 ### Public API Changes
 * Moving main package to `io.github.cyfko.dverify` Package
