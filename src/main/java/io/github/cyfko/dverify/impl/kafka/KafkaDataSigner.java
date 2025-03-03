@@ -41,7 +41,7 @@ public class KafkaDataSigner implements DataSigner {
      * <code>Properties</code>.
      * Note that some properties will be discarded if they don't match to the way KafkaDataSigner works.
      *
-     * @apiNote Recognized properties are those defined by {@link org.apache.kafka.clients.producer.ProducerConfig} and
+     * @implNote Recognized properties are those defined by {@link org.apache.kafka.clients.producer.ProducerConfig} and
      * {@link io.github.cyfko.dverify.impl.kafka.SignerConfig} classes.
      * <ul>
      *    <li><code>{@link org.apache.kafka.clients.producer.ProducerConfig}.BOOTSTRAP_SERVERS_CONFIG</code> <sup><small>[REQUIRED]</small></sup> as specified by Kafka</li>
@@ -108,8 +108,7 @@ public class KafkaDataSigner implements DataSigner {
                     .expiration(expirationDate)
                     .signWith(keyPair.getPrivate())
                     .compact();
-            propagatePublicKey(publicKeyId);
-            return token;
+            return propagatePublicKey(publicKeyId, token);
         } catch (Exception e){
             throw new JsonEncodingException(e.getMessage());
         }
@@ -132,14 +131,35 @@ public class KafkaDataSigner implements DataSigner {
         }
     }
 
-    private void propagatePublicKey(String publicKeyId) {
-        String encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        producer.send(new ProducerRecord<>(properties.getProperty(SignerConfig.BROKER_TOPIC_CONFIG), publicKeyId, encodedPublicKey), (metadata, exception) -> {
+    /**
+     * Send the Kafka event message for which the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
+     * strictly follows the convention:  <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Base64 variant]</code>
+     * @param publicKeyId The RSA public key used to verify the token.
+     * @param jwt The JWT token embedding the desired data.
+     * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
+     */
+    private String propagatePublicKey(String publicKeyId, String jwt) {
+        final String encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
+        final String tokenConfig = properties.getProperty(SignerConfig.GENERATED_TOKEN_CONFIG);
+
+        String message = switch (tokenConfig){
+            case Constant.GENERATED_TOKEN_JWT -> String.format("%s:%s:%s", tokenConfig, encodedPublicKey, "");
+            case Constant.GENERATED_TOKEN_IDENTITY -> String.format("%s:%s:%s", tokenConfig, encodedPublicKey, jwt);
+            default -> throw new IllegalStateException("Unexpected value: " + tokenConfig);
+        };
+
+        producer.send(new ProducerRecord<>(properties.getProperty(SignerConfig.BROKER_TOPIC_CONFIG), publicKeyId, message), (metadata, exception) -> {
             if (exception == null) {
                 log.debug("Public key sent to Kafka successfully with offset: {}", metadata.offset());
             } else {
                 log.error("Error sending the public key to kafka: {}", metadata.offset());
             }
         });
+
+        return switch (tokenConfig){
+            case Constant.GENERATED_TOKEN_JWT -> jwt;
+            case Constant.GENERATED_TOKEN_IDENTITY -> publicKeyId;
+            default -> throw new IllegalStateException("Unexpected value: " + tokenConfig);
+        };
     }
 }

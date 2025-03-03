@@ -1,5 +1,8 @@
 package io.github.cyfko.dverify.impl.kafka;
 
+/**
+ * Defines the configuration keys for the DataVerifier.
+ */
 public abstract class VerifierConfig {
     /**
      * The value that should be associated to this property name must meet the directory path naming restriction (if any).

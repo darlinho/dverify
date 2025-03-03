@@ -54,7 +54,7 @@ public class KafkaDataVerifier implements DataVerifier {
      * Construct an instance of the <code>KafkaDataVerifier</code> mixing environment properties and the provided <code>Properties</code>.
      * Note that some properties will be discarded if they don't match to the way KafkaDataVerifier works.
      *
-     * @apiNote @apiNote Recognized properties are those defined by {@link org.apache.kafka.clients.consumer.ConsumerConfig} and
+     * @implNote Recognized properties are those defined by {@link org.apache.kafka.clients.consumer.ConsumerConfig} and
      * {@link io.github.cyfko.dverify.impl.kafka.VerifierConfig} classes.
      * <ul>
      *    <li><code>ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG</code> <sup><small>[REQUIRED]</small></sup> as specified by Kafka</li>
@@ -115,15 +115,10 @@ public class KafkaDataVerifier implements DataVerifier {
     }
 
     @Override
-    public <T> T verify(String jwt, Class<T> clazz) throws DataExtractionException {
-        String keyId = getKeyId(jwt);
-
+    public <T> T verify(String token, Class<T> clazz) throws DataExtractionException {
+        String keyId = getKeyId(token);
         try {
-            Jwt<?, Claims> parsedJwt = Jwts.parser()
-                    .verifyWith(getPublicKey(keyId))
-                    .build()
-                    .parseSignedClaims(jwt);
-            final var data = parsedJwt.getPayload().get("data", String.class);
+            final var data = getClaims(keyId,token).get("data", String.class);
             return JacksonUtil.fromJson(data, clazz);
         } catch (DataExtractionException e) {
             throw e;
@@ -132,30 +127,39 @@ public class KafkaDataVerifier implements DataVerifier {
         }
     }
 
-    private String getKeyId(String jwt) {
+    private String getKeyId(String token) {
         try {
-            String payloadBase64 = jwt.split("\\.")[1];
+            String payloadBase64 = token.split("\\.")[1];
             String payloadJson = new String(Base64.getDecoder().decode(payloadBase64));
 
             // Parse JSON and extract the "sub" field
             JsonNode jsonNode = JacksonUtil.fromJson(payloadJson, JsonNode.class);
             return jsonNode.get("sub").asText();
+        } catch (IndexOutOfBoundsException e) {
+            return token; // The token is not a JWT, maybe it's a UUID
         } catch (Exception e) {
             throw new DataExtractionException("Failed to extract subject from JWT: " + e.getMessage());
         }
     }
 
-    private PublicKey getPublicKey(String keyId) {
-        String base64Key;
+    /**
+     * Remember: the Kafka event message should be a message where the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
+     * strictly follows the convention:  <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Base64 variant]</code>
+     * @param publicKeyId The RSA public key used to verify the token.
+     * @param jwt The JWT token embedding the desired data.
+     * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
+     */
+    private Claims getClaims(String keyId, String token) {
+        String messageValue;
         try {
             byte[] bytes = db.get(keyId.getBytes());
-            base64Key = bytes != null ? new String(bytes) : null;
+            messageValue = bytes != null ? new String(bytes) : null;
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new DataExtractionException("An unexpected error occurred when reading the embedded DB: \n" + e.getMessage());
         }
 
-        if (base64Key == null) {
+        if (messageValue == null) {
             // Read messages from the broker
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(5000)); // At most 5 secs to wait for.
             for (var record: records) {
@@ -163,7 +167,7 @@ public class KafkaDataVerifier implements DataVerifier {
                     // persist on embedded DB
                     db.put(record.key().getBytes(), record.value().getBytes());
                     if (keyId.equals(record.key())) {
-                        base64Key = record.value();
+                        messageValue = record.value();
                     }
                 } catch (RocksDBException ex) {
                     log.error(ex.getMessage());
@@ -172,15 +176,32 @@ public class KafkaDataVerifier implements DataVerifier {
             }
         }
 
-        if (base64Key == null) {
+        if (messageValue == null) {
             log.debug("Failed to find public key for keyId: {}", keyId);
             throw new DataExtractionException("Key {" + keyId + "} not found");
         }
 
         // Decode the Base64 encoded string into a byte array
-        byte[] decodedKey = Base64.getDecoder().decode(base64Key);
+        String[] parts = messageValue.split(":");
         try {
-            return keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+            byte[] decodedKey = Base64.getDecoder().decode(parts[1]);
+            final PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+
+            return switch (parts[0]){
+                case Constant.GENERATED_TOKEN_JWT -> Jwts.parser()
+                        .verifyWith(publicKey)
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+
+                case Constant.GENERATED_TOKEN_IDENTITY -> Jwts.parser()
+                        .verifyWith(publicKey)
+                        .build()
+                        .parseSignedClaims(parts[2])
+                        .getPayload();
+
+                default -> throw new IllegalStateException("Unexpected value token config encountered: " + token);
+            };
         } catch (InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }

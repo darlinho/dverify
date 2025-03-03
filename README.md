@@ -81,10 +81,11 @@ see https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core.
 
 The following environment variables allow customization of the Kafka-based implementation:
 
-- **`AST_KAFKA_BOOSTRAP_SERVERS`**: The Kafka boostrap servers. Comma-delimited list of `host:port` pairs to use for 
+- **`DVER_KAFKA_BOOSTRAP_SERVERS`**: The Kafka boostrap servers. Comma-delimited list of `host:port` pairs to use for 
   establishing the initial connections to the Kafka cluster. *Default to `localhost:9092`*
-- **`AST_TOKEN_VERIFIER_TOPIC`**: The Kafka topic for token verification messages. *Default to `token-verifier-topic`*.
-- **`AST_KEYS_ROTATION_MINUTES`**: The interval in minutes for rotating public keys. *Default to `30`*.
+- **`DVER_TOKEN_VERIFIER_TOPIC`**: The Kafka topic for token verification messages. *Default to `token-verifier-topic`*.
+- **`DVER_EMBEDDED_DATABASE_PATH`**: The path to the RocksDB directory. *Default to `dverify_db_data`*.
+- **`DVER_KEYS_ROTATION_MINUTES`**: The interval in minutes for rotating public keys. *Default to `30`*.
 
 These implementations ensure **scalability, high availability, and decentralized verification** in a microservices ecosystem.
 
@@ -117,20 +118,47 @@ kafka.public-key-topic=tokens-public-keys
 ```
 
 ### 3. Usage Example
+- #### 3.1 Transform a data to/from a JWT token
+    ##### Signing the data
+    
+    ```java
+    import java.util.Properties;
+    
+    Properties properties = new Properties();
+    properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    
+    DataSigner signer = KafkaDataSigner.of(properties);
+    String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
+    System.out.println("Generated Token: "+jwt);
+    ```
+    
+    ##### Verifying the JWT token
+    ```java
+    DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
+    UserData userData = verifier.verify(jwt, UserData.class);
+    System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
+    ```
+- #### 3.2 Transform a data to/from a unique identifier
+  ##### Signing the data
 
-#### Signing a Token
-```java
-DataSigner signer = new KafkaDataSigner(); // will use the default config
-String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
-System.out.println("Generated Token: " + jwt);
-```
+    ```java
+    import java.util.Properties;
+    
+    Properties properties = new Properties();
+    properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    properties.setProperty(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_IDENTITY);
+    
+    DataSigner signer = KafkaDataSigner.of(properties);
+    String uniqueId = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
+    System.out.println("Generated ID: "+uniqueId);
+    ```
 
-#### Verifying a Token
-```java
-DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
-UserData userData = verifier.verify(jwt, UserData.class);
-System.out.println("Verified Data: " + userData.getEmail());
-```
+  ##### Verifying the JWT token
+    ```java
+    DataVerifier verifier = new KafkaDataVerifier(); // The verifier does not have to change to accommodate to the generated token type!
+    UserData userData = verifier.verify(uniqueId, UserData.class);
+    System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
+    ```
 
 ### 4. Running Kafka Locally (For Testing)
 

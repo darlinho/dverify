@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 
 import java.util.Properties;
 
-public abstract class PropertiesUtil {
+abstract class PropertiesUtil {
 
     /**
      * Add or overwrite <>props</> with the unique properties requirement of the Kafka implementation of the library.
@@ -29,6 +29,10 @@ public abstract class PropertiesUtil {
 
         if (!props.containsKey(SignerConfig.BROKER_TOPIC_CONFIG)){
             props.setProperty(SignerConfig.BROKER_TOPIC_CONFIG, Constant.KAFKA_TOKEN_VERIFIER_TOPIC);
+        }
+
+        if (!props.containsKey(SignerConfig.GENERATED_TOKEN_CONFIG)){
+            props.setProperty(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_JWT);
         }
     }
 
