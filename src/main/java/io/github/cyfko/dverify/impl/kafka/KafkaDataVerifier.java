@@ -5,7 +5,6 @@ import io.github.cyfko.dverify.DataVerifier;
 import io.github.cyfko.dverify.exceptions.DataExtractionException;
 import io.github.cyfko.dverify.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -150,6 +149,32 @@ public class KafkaDataVerifier implements DataVerifier {
      * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
      */
     private Claims getClaims(String keyId, String token) {
+        String[] parts = getEventMessageValue(keyId).split(":");
+        try {
+            byte[] decodedKey = Base64.getDecoder().decode(parts[1]);
+            final PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+
+            return switch (parts[0]){
+                case Constant.GENERATED_TOKEN_JWT -> Jwts.parser()
+                        .verifyWith(publicKey)
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+
+                case Constant.GENERATED_TOKEN_IDENTITY -> Jwts.parser()
+                        .verifyWith(publicKey)
+                        .build()
+                        .parseSignedClaims(parts[2])
+                        .getPayload();
+
+                default -> throw new IllegalStateException("Unexpected value token config encountered: " + token);
+            };
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getEventMessageValue(String keyId) {
         String messageValue;
         try {
             byte[] bytes = db.get(keyId.getBytes());
@@ -180,31 +205,7 @@ public class KafkaDataVerifier implements DataVerifier {
             log.debug("Failed to find public key for keyId: {}", keyId);
             throw new DataExtractionException("Key {" + keyId + "} not found");
         }
-
-        // Decode the Base64 encoded string into a byte array
-        String[] parts = messageValue.split(":");
-        try {
-            byte[] decodedKey = Base64.getDecoder().decode(parts[1]);
-            final PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
-
-            return switch (parts[0]){
-                case Constant.GENERATED_TOKEN_JWT -> Jwts.parser()
-                        .verifyWith(publicKey)
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
-
-                case Constant.GENERATED_TOKEN_IDENTITY -> Jwts.parser()
-                        .verifyWith(publicKey)
-                        .build()
-                        .parseSignedClaims(parts[2])
-                        .getPayload();
-
-                default -> throw new IllegalStateException("Unexpected value token config encountered: " + token);
-            };
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        }
+        return messageValue;
     }
 
     private void closeDB() {
