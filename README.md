@@ -152,4 +152,4 @@ This project is licensed under the MIT License. See the LICENSE file for more de
 💬 Have feedback or ideas? Let’s build a secure and efficient token verification system together!
 
 📌 GitHub: https://github.com/cyfko/dverify
-📧 Contact: your.email@example.com
+📧 Contact: frank.kossi@kunrin.com
