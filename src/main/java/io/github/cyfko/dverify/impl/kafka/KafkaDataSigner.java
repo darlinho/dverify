@@ -120,8 +120,8 @@ public class KafkaDataSigner implements DataSigner {
         // Check if the last execution was within the last KEYS_ROTATION_RATE_MINUTES
         if (currentTime - lastExecutionTime >= Constant.KEYS_ROTATION_MINUTES * 60 * 1000 || lastExecutionTime == 0) {
             try {
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-                keyPairGenerator.initialize(2048);
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(Constant.ASYMMETRIC_KEYPAIR_ALGORITHM);
+
                 keyPair = keyPairGenerator.generateKeyPair();
             } catch (Exception e) {
                 log.error("Error generating keys-pair: {}", e.getMessage());

@@ -52,6 +52,8 @@ public abstract class Constant {
      */
     public static final String GENERATED_TOKEN_IDENTITY = "uuid";
 
+    public static final String ASYMMETRIC_KEYPAIR_ALGORITHM = "Ed25519";
+
     static {
         final var boostrapServers = System.getenv(Env.KAFKA_BOOSTRAP_SERVERS);
         KAFKA_BOOSTRAP_SERVERS = boostrapServers != null ? boostrapServers : ConstantDefault.KAFKA_BOOSTRAP_SERVERS;

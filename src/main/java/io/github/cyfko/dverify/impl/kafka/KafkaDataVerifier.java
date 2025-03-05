@@ -34,7 +34,7 @@ public class KafkaDataVerifier implements DataVerifier {
     static {
         try {
             RocksDB.loadLibrary();
-            keyFactory = KeyFactory.getInstance("RSA");
+            keyFactory = KeyFactory.getInstance(Constant.ASYMMETRIC_KEYPAIR_ALGORITHM);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -144,8 +144,8 @@ public class KafkaDataVerifier implements DataVerifier {
     /**
      * Remember: the Kafka event message should be a message where the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
      * strictly follows the convention:  <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Base64 variant]</code>
-     * @param publicKeyId The RSA public key used to verify the token.
-     * @param jwt The JWT token embedding the desired data.
+     * @param keyId The RSA public key used to verify the token.
+     * @param token The token embedding the desired data.
      * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
      */
     private Claims getClaims(String keyId, String token) {
