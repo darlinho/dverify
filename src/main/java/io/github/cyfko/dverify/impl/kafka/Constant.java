@@ -2,15 +2,17 @@ package io.github.cyfko.dverify.impl.kafka;
 
 /// Provide defaults to some constants.
 abstract class ConstantDefault{
+    static final long CLEANUP_INTERVAL_MINUTES = 60; // 60 minutes
     static final String KAFKA_BOOSTRAP_SERVERS = "localhost:9092";
-    static final String TOKEN_VERIFIER_TOPIC = "token-verifier-topic";
-    static final long KEYS_ROTATION_MINUTES = 30L;
+    static final String TOKEN_VERIFIER_TOPIC = "token-verifier";
+    static final long KEYS_ROTATION_MINUTES = 1440; // 24 hours
     static final String EMBEDDED_DATABASE_PATH = "dverify_db_data";
     static final String UNIQUE_BROKER_GROUP_ID_KEY = "dverify_db";
 }
 
 /// Defines environment variable names.
 abstract class Env{
+    static final String CLEANUP_INTERVAL_MINUTES = "DVER_CLEANUP_INTERVAL_MINUTES";
     static final String KAFKA_BOOSTRAP_SERVERS = "DVER_KAFKA_BOOSTRAP_SERVERS";
     static final String KAFKA_TOKEN_VERIFIER_TOPIC = "DVER_TOKEN_VERIFIER_TOPIC";
     static final String EMBEDDED_DATABASE_PATH = "DVER_EMBEDDED_DATABASE_PATH";
@@ -52,7 +54,15 @@ public abstract class Constant {
      */
     public static final String GENERATED_TOKEN_IDENTITY = "uuid";
 
+    /**
+     * Algorithm used to generate asymmetric keys pair.
+     */
     public static final String ASYMMETRIC_KEYPAIR_ALGORITHM = "Ed25519";
+
+    /**
+     * Expired entries cleanup interval in minutes.
+     */
+    public static final long CLEANUP_INTERVAL_MINUTES;
 
     static {
         final var boostrapServers = System.getenv(Env.KAFKA_BOOSTRAP_SERVERS);
@@ -66,5 +76,8 @@ public abstract class Constant {
 
         final var dbPath = System.getenv(Env.EMBEDDED_DATABASE_PATH);
         EMBEDDED_DATABASE_PATH = dbPath != null ? dbPath : ConstantDefault.EMBEDDED_DATABASE_PATH;
+
+        final var interval = System.getenv(Env.CLEANUP_INTERVAL_MINUTES);
+        CLEANUP_INTERVAL_MINUTES = interval != null ? Long.parseLong(interval) : ConstantDefault.CLEANUP_INTERVAL_MINUTES;
     }
 }

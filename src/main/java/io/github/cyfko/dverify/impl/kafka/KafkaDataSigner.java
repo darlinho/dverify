@@ -12,6 +12,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Properties;
@@ -108,7 +109,7 @@ public class KafkaDataSigner implements DataSigner {
                     .expiration(expirationDate)
                     .signWith(keyPair.getPrivate())
                     .compact();
-            return propagatePublicKey(publicKeyId, token);
+            return propagatePublicKey(publicKeyId, token, expirationDate);
         } catch (Exception e){
             throw new JsonEncodingException(e.getMessage());
         }
@@ -133,18 +134,21 @@ public class KafkaDataSigner implements DataSigner {
 
     /**
      * Send the Kafka event message for which the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
-     * strictly follows the convention:  <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Base64 variant]</code>
+     * strictly follows the convention: <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Expiry date seconds]</code> <code>:</code> <code>[Base64 variant]</code>
+     *
      * @param publicKeyId The RSA public key used to verify the token.
-     * @param jwt The JWT token embedding the desired data.
+     * @param token The token referring to the desired data.
+     * @param expirationDate The validity duration of the token.
+     *
      * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
      */
-    private String propagatePublicKey(String publicKeyId, String jwt) {
+    private String propagatePublicKey(String publicKeyId, String token, Date expirationDate) {
         final String encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
         final String tokenConfig = properties.getProperty(SignerConfig.GENERATED_TOKEN_CONFIG);
 
         String message = switch (tokenConfig){
-            case Constant.GENERATED_TOKEN_JWT -> String.format("%s:%s:%s", tokenConfig, encodedPublicKey, "");
-            case Constant.GENERATED_TOKEN_IDENTITY -> String.format("%s:%s:%s", tokenConfig, encodedPublicKey, jwt);
+            case Constant.GENERATED_TOKEN_JWT -> String.format("%s:%s:%s:%s", tokenConfig, encodedPublicKey, expirationDate.getTime(),  "");
+            case Constant.GENERATED_TOKEN_IDENTITY -> String.format("%s:%s:%s:%s", tokenConfig, encodedPublicKey, expirationDate.getTime(), token);
             default -> throw new IllegalStateException("Unexpected value: " + tokenConfig);
         };
 
@@ -157,7 +161,7 @@ public class KafkaDataSigner implements DataSigner {
         });
 
         return switch (tokenConfig){
-            case Constant.GENERATED_TOKEN_JWT -> jwt;
+            case Constant.GENERATED_TOKEN_JWT -> token;
             case Constant.GENERATED_TOKEN_IDENTITY -> publicKeyId;
             default -> throw new IllegalStateException("Unexpected value: " + tokenConfig);
         };

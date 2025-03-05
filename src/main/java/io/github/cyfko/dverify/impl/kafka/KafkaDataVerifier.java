@@ -12,15 +12,20 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class KafkaDataVerifier implements DataVerifier {
@@ -30,6 +35,7 @@ public class KafkaDataVerifier implements DataVerifier {
     private final KafkaConsumer<String, String> consumer;
     private final RocksDB db;
     private final Options options;
+    private final ScheduledExecutorService scheduler;
 
     static {
         try {
@@ -107,6 +113,10 @@ public class KafkaDataVerifier implements DataVerifier {
             this.consumer = new KafkaConsumer<>(properties);
             this.consumer.subscribe(List.of(Constant.KAFKA_TOKEN_VERIFIER_TOPIC));
 
+            // initialize clean task
+            this.scheduler = Executors.newSingleThreadScheduledExecutor();
+            startCustomCleanup(db);
+
         } catch (RocksDBException e) {
             log.error(e.getMessage());
             throw new RuntimeException("Unable to initialize KafkaVerifier: Embedded Database could not be opened.");
@@ -143,7 +153,7 @@ public class KafkaDataVerifier implements DataVerifier {
 
     /**
      * Remember: the Kafka event message should be a message where the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
-     * strictly follows the convention:  <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Base64 variant]</code>
+     * strictly follows the convention: <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Expiry date seconds]</code> <code>:</code> <code>[Base64 variant]</code>
      * @param keyId The RSA public key used to verify the token.
      * @param token The token embedding the desired data.
      * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
@@ -164,7 +174,7 @@ public class KafkaDataVerifier implements DataVerifier {
                 case Constant.GENERATED_TOKEN_IDENTITY -> Jwts.parser()
                         .verifyWith(publicKey)
                         .build()
-                        .parseSignedClaims(parts[2])
+                        .parseSignedClaims(parts[3])
                         .getPayload();
 
                 default -> throw new IllegalStateException("Unexpected value token config encountered: " + token);
@@ -224,5 +234,36 @@ public class KafkaDataVerifier implements DataVerifier {
             db.put(ConstantDefault.UNIQUE_BROKER_GROUP_ID_KEY.getBytes(), idByte);
         }
         return new String(idByte);
+    }
+
+    /**
+     * Starts a background thread that periodically deletes expired entries based on a custom predicate.
+     */
+    private void startCustomCleanup(RocksDB db) {
+        final long INTERVAL_MINUTES = Long.parseLong(properties.getProperty(VerifierConfig.CLEANUP_INTERVAL_CONFIG));
+        scheduler.scheduleAtFixedRate(() -> {
+            try (RocksIterator iterator = db.newIterator()) {
+                long now = System.currentTimeMillis();
+
+                for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                    String key = new String(iterator.key(), StandardCharsets.UTF_8);
+                    String value = new String(iterator.value(), StandardCharsets.UTF_8);
+                    if (key.equals(ConstantDefault.UNIQUE_BROKER_GROUP_ID_KEY)) continue;
+
+                    // Extract timestamp from stored value
+                    long timestamp = Long.parseLong(value.split(":")[2]);
+
+                    // Custom predicate: Delete if expired AND value contains "value1"
+                    if ((now - timestamp) > 0) {
+                        db.delete(iterator.key());
+                        log.info("Deleted key {} after expiration.", key);
+                    }
+                }
+            } catch (RocksDBException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                log.error("Error when running cleanup task: \n{}.", e.getMessage());
+            }
+        }, 0, INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 }

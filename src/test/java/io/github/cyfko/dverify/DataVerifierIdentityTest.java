@@ -41,11 +41,12 @@ public class DataVerifierIdentityTest {
         String kafkaBootstrapServers = kafkaContainer.getBootstrapServers();
 
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
-        props.put(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_IDENTITY);
+        props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+        props.setProperty(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_IDENTITY);
 
         tempDir = Files.createTempDirectory("rocksdb_db_test_").toFile();
-        props.put(VerifierConfig.EMBEDDED_DB_PATH_CONFIG, tempDir.getAbsolutePath());
+        props.setProperty(VerifierConfig.EMBEDDED_DB_PATH_CONFIG, tempDir.getAbsolutePath());
+        props.setProperty(VerifierConfig.CLEANUP_INTERVAL_CONFIG, "1");
 
         signer = KafkaDataSigner.of(props);
         verifier = KafkaDataVerifier.of(props);

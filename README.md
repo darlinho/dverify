@@ -40,6 +40,20 @@ For **Gradle**:
 implementation 'io.github.cyfko:dverify:2.1.0'
 ```
 
+### 2. Environment Variables (Optional)
+
+The application relies on the following environment variables for configuration:
+
+| Variable Name                     | Description                               | Default Value                                    |
+|------------------------------------|-------------------------------------------|--------------------------------------------------|
+| `DVER_CLEANUP_INTERVAL_MINUTES`   | Interval (in minutes) for cleanup tasks  | `60`                                             |
+| `DVER_KAFKA_BOOSTRAP_SERVERS`     | Kafka bootstrap servers                  | `localhost:9092`                                 |
+| `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification       | `token-verifier`                                 |
+| `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                 | `dverify_db_data` (relative to _temp_ directory) |
+| `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation   | `1440` (24h)                                     |
+
+> NOTE: The application uses **[RocksDB](https://rocksdb.org/)** as the embedded database for local storage.
+
 ## 🚀 Usage
 
 🔑 Basic Token Verification
