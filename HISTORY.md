@@ -1,5 +1,9 @@
 # DVerify Change Log
 
+## 2.2.0 (05/03/2025)
+### Behavior Changes
+* Relying on scheduled task to automatically remove expired entries on the embedded database.
+
 ## 2.1.0 (03/03/2025)
 ### Behavior Changes
 * Obtain UUID tokens instead of JWT by constructing a KafkaDataSigner with the property name `SignerConfig.GENERATED_TOKEN_CONFIG` mapped to the value `Constant.GENERATED_TOKEN_IDENTITY`.
