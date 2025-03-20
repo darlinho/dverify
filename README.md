@@ -52,29 +52,61 @@ dverify/
 │── README.md
 ```
 
-## 📦 Installation
+## 🏗 Who Can Benefit?
+
+- 👨‍💻 Developers & Architects – Simplify token authentication across microservices.
+- 🏢 Organizations – Strengthen security & ensure trusted communication.
+- 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
+
+## 📦 Available Implementations
 
 To install DVerify, follow these steps:
 
-### 1. Add the Dependency
-
-For **Maven**:
+### Java
+- (**Maven**)
 
 ```xml
 
 <dependency>
     <groupId>io.github.cyfko</groupId>
     <artifactId>dverify</artifactId>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
 </dependency>
 ```
 
-For **Gradle**:
+- (**Gradle**)
 ```gradle
-implementation 'io.github.cyfko:dverify:2.2.0'
+implementation 'io.github.cyfko:dverify:2.2.1'
 ```
+Visit the [Java documentation](java/README.md) for more details.
 
-### 2. Environment Variables (Optional)
+### Python (Upcoming)
+A Python implementation is in development. Stay tuned!
+
+Visit the [Python documentation](python/README.md) for more details.
+
+### Node.js (Upcoming)
+A JavaScript/TypeScript version will be released soon.
+
+Visit the [Node.js documentation](nodejs/README.md) for more details.
+
+### C# (.NET) (Upcoming)
+Support for .NET is planned.
+
+Visit the [C# documentation](csharp/README.md) for more details.
+
+### Rust (Upcoming)
+A Rust-native implementation is in progress.
+
+Visit the [Rust documentation](rust/README.md) for more details.
+
+### Go (Upcoming)
+A Go implementation is in development.
+
+Visit tge [Go documentation](go/README.md) for more details.
+
+
+## Environment Variables (Optional)
 
 The application relies on the following environment variables for configuration:
 
@@ -85,13 +117,6 @@ The application relies on the following environment variables for configuration:
 | `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification       | `token-verifier`                                 |
 | `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                 | `dverify_db_data` (relative to _temp_ directory) |
 | `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation   | `1440` (24h)                                     |
-
-
-## 🏗 Who Can Benefit?
-
-- 👨‍💻 Developers & Architects – Simplify token authentication across microservices.
-- 🏢 Organizations – Strengthen security & ensure trusted communication.
-- 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
 
 ## 🛠 Contributing
 
@@ -116,55 +141,7 @@ git commit -m "Added new feature"
 git push origin feature/your-feature
 ```
 
-## 📖 Check the CONTRIBUTING.md for detailed guidelines.
-
-
-## Available Implementations
-
-See the corresponding `README` for language specific implementation and usage.
-
--  [Java documentation](java/README.md).
--  [Node.js documentation](nodejs/README.md).
--  [Python documentation](python/README.md).
--  [C# documentation](csharp/README.md).
--  [Rust documentation](rust/README.md).
--  [Go documentation](go/README.md).
-
-### Java
-The original DVerify implementation is written in Java and available on [Maven Central](https://central.sonatype.com/artifact/io.github.cyfko/dverify).
-
-#### Installation
-
-- Maven
-```xml
-<dependency>
-    <groupId>io.github.cyfko</groupId>
-    <artifactId>dverify</artifactId>
-    <version>2.2.1</version>
-</dependency>
-```
-- Gradle
-```gradle
-implementation 'io.github.cyfko:dverify:2.2.1'
-```
-
-#### 🚀 Usage
-visit the [Java documentation](java/README.md).
-
-### Python (Upcoming)
-A Python implementation is in development. Stay tuned!
-
-### Node.js (Upcoming)
-A JavaScript/TypeScript version will be released soon.
-
-### C# (.NET) (Upcoming)
-Support for .NET is planned.
-
-### Rust (Upcoming)
-A Rust-native implementation is in progress.
-
-### Go (Upcoming)
-A Go implementation is in development.
+📖 Check the [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📢 Get Involved!
 💬 Have feedback or ideas? Let’s build a secure and efficient token verification system together!
