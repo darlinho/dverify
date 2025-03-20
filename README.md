@@ -37,6 +37,14 @@ Protect API endpoints with short-lived or refreshable tokens.
 Verify self-sovereign identities (SSI) using decentralized ID tokens.
 Authenticate users across blockchain-based or federated identity systems.
 
+
+## 🏗 Who Can Benefit?
+
+- 👨‍💻 Developers & Architects – Simplify token authentication across microservices.
+- 🏢 Organizations – Strengthen security & ensure trusted communication.
+- 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
+
+
 ## Repository Structure
 ```
 dverify/
@@ -51,12 +59,6 @@ dverify/
 │── LICENSE
 │── README.md
 ```
-
-## 🏗 Who Can Benefit?
-
-- 👨‍💻 Developers & Architects – Simplify token authentication across microservices.
-- 🏢 Organizations – Strengthen security & ensure trusted communication.
-- 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
 
 ## 📦 Available Implementations
 
