@@ -13,7 +13,7 @@
     "url": "https://github.com/cyfko/dverify.git"
   },
   "keywords": ["kafka", "signer", "jwt", "typescript", "security"],
-  "author": "darlinho",
+  "author": "darlinho darlinteuma2@gmail.com https://darlinteuma.netlify.app",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.7",
