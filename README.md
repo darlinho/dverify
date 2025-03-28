@@ -66,21 +66,6 @@ dverify/
 To install DVerify, follow these steps:
 
 ### Java
-- (**Maven**)
-
-```xml
-
-<dependency>
-    <groupId>io.github.cyfko</groupId>
-    <artifactId>dverify</artifactId>
-    <version>2.2.1</version>
-</dependency>
-```
-
-- (**Gradle**)
-```gradle
-implementation 'io.github.cyfko:dverify:2.2.1'
-```
 Visit the [Java documentation](java/README.md) for more details.
 
 ### Python (Upcoming)
@@ -89,8 +74,6 @@ A Python implementation is in development. Stay tuned!
 Visit the [Python documentation](python/README.md) for more details.
 
 ### Node.js
-A JavaScript/TypeScript version will be released soon.
-
 Visit the [Node.js documentation](nodejs/README.md) for more details.
 
 ### C# (.NET) (Upcoming)
