@@ -87,7 +87,7 @@ A Python implementation is in development. Stay tuned!
 
 Visit the [Python documentation](python/README.md) for more details.
 
-### Node.js (Upcoming)
+### Node.js
 A JavaScript/TypeScript version will be released soon.
 
 Visit the [Node.js documentation](nodejs/README.md) for more details.
