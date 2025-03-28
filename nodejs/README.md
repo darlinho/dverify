@@ -1,4 +1,4 @@
-# 📦 dverify-ts
+# 📦 dverify
 
 A robust TypeScript module for signing and verifying data using JWT and ECDSA keys distributed via Kafka, with LMDB persistence and automatic key rotation.
 
@@ -18,13 +18,13 @@ A robust TypeScript module for signing and verifying data using JWT and ECDSA ke
 ## 📦 Installation
 
 ```bash
-npm install dverify-ts
+npm install dverify
 ```
 
 or
 
 ```bash
-pnpm add dverify-ts
+pnpm add dverify
 ```
 
 ---
@@ -34,7 +34,7 @@ pnpm add dverify-ts
 ### Basic example (with NestJS, Express, or standalone):
 
 ```ts
-import { DVerify } from 'dverify-ts';
+import { DVerify } from 'dverify';
 
 const dverify = new DVerify();
 
