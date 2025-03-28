@@ -82,3 +82,18 @@ The application relies on the following environment variables for configuration:
     UserData userData = verifier.verify(uniqueId, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
+
+---
+
+## 📌 Requirements
+
+- Java >= 21
+- Kafka cluster running
+
+---
+
+## 🔐 Security Considerations
+
+- Uses ES256 (ECDSA with P-256 curve)
+- All public keys are stored and verified from **[RocksDB](https://rocksdb.org/)**
+- Only valid keys within the expiration window are accepted
