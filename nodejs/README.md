@@ -59,9 +59,9 @@ Directly handle signing and verifying separately, for advanced scenarios (e.g., 
 **Signing:**
 
 ```ts
-import { DverifyDataSigner } from 'dverify';
+import { DataSigner } from 'dverify';
 
-const signer = new DverifyDataSigner();
+const signer = new DataSigner();
 
 // Sign data directly
 const token = await signer.sign({ orderId: 'xyz' }, 3600);
@@ -71,9 +71,9 @@ console.log(token);
 **Verifying:**
 
 ```ts
-import { DverifyDataVerifier } from 'dverify';
+import { DataVerifier } from 'dverify';
 
-const verifier = new DverifyDataVerifier();
+const verifier = new DataVerifier();
 
 // Verify token directly
 try {
@@ -100,10 +100,10 @@ try {
 
 ### Advanced Mode (Separate classes)
 
-- **`DverifyDataSigner`** (signing only)
+- **`DataSigner`** (signing only)
     - `sign<T>(data: T, duration: number): Promise<string>`
 
-- **`DverifyDataVerifier`** (verification only)
+- **`DataVerifier`** (verification only)
     - `verify<T>(token: string): Promise<T>`
 
 ---
@@ -135,8 +135,8 @@ DVERIFY_DB_PATH=./data/dverify
 ```
 src/
 ├── implementations/
-│   ├── DverifyDataSigner.ts       // Kafka producer + key rotation
-│   └── DverifyDataVerifier.ts     // Kafka consumer + JWT verification
+│   ├── DataSigner.ts       // Kafka producer + key rotation
+│   └── DataVerifier.ts     // Kafka consumer + JWT verification
 ├── interfaces/                    // Type-safe abstractions
 ├── config.ts                      // Environment configuration
 ├── Dverify.ts                     // Main public API
