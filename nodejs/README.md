@@ -29,41 +29,82 @@ pnpm add dverify
 
 ---
 
+---
+
 ## 🛠️ Usage
 
-### Basic example (with NestJS, Express, or standalone):
+The module provides two usage modes:
+
+### ✅ **Easy Mode (`DVerify`)**
+
+Ideal for simple cases, with built-in signer and verifier:
 
 ```ts
 import { DVerify } from 'dverify';
 
 const dverify = new DVerify();
 
-// Sign a payload
+// Sign data
 const { token } = await dverify.sign({ userId: 123 }, 1200);
 
-// Verify a token
+// Verify token
 const result = await dverify.verify(token);
 console.log(result.valid, result.data);
+```
+
+### ⚙️ **Advanced Mode (Direct use of signer/verifier)**
+
+Directly handle signing and verifying separately, for advanced scenarios (e.g., microservices):
+
+**Signing:**
+
+```ts
+import { DverifyDataSigner } from 'dverify';
+
+const signer = new DverifyDataSigner();
+
+// Sign data directly
+const token = await signer.sign({ orderId: 'xyz' }, 3600);
+console.log(token);
+```
+
+**Verifying:**
+
+```ts
+import { DverifyDataVerifier } from 'dverify';
+
+const verifier = new DverifyDataVerifier();
+
+// Verify token directly
+try {
+  const data = await verifier.verify(token);
+  console.log('Data:', data);
+} catch (error) {
+  console.error('Invalid token:', error);
+}
 ```
 
 ---
 
 ## 🧪 API
 
-### `new DVerify()`
+### Easy Mode (`DVerify` class)
 
-Creates an instance of the DVerify client with environment-based configuration.
+- **`sign(message: Record<string, any>, duration?: number): Promise<{ token: string }>`**
+    - Signs the data and returns a JWT.
+    - `message`: JSON object to sign.
+    - `duration`: Token validity in seconds (default: `1400`).
 
-### `sign(message: Record<string, any>, duration?: number): Promise<{ token: string }>`
+- **`verify<T>(token: string): Promise<{ valid: boolean; data: T }>`**
+    - Verifies the JWT and returns the decoded data.
 
-Signs a JSON object and returns a JWT.
+### Advanced Mode (Separate classes)
 
-- `message`: The data you want to sign.
-- `duration`: (optional) Token validity in seconds. Defaults to `1400`.
+- **`DverifyDataSigner`** (signing only)
+    - `sign<T>(data: T, duration: number): Promise<string>`
 
-### `verify<T>(token: string): Promise<{ valid: boolean; data: T }>`
-
-Verifies a JWT and returns its payload.
+- **`DverifyDataVerifier`** (verification only)
+    - `verify<T>(token: string): Promise<T>`
 
 ---
 
