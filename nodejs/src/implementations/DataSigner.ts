@@ -2,7 +2,6 @@ import { Kafka, Producer } from 'kafkajs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { open } from 'lmdb';
-import { DataSigner } from '../types/DataSigner';
 import { JsonEncodingException } from '../exceptions/JsonEncodingException';
 import { config } from '../config';
 
@@ -20,7 +19,7 @@ interface KeyRecord {
  * Dverify is responsible for signing data, storing the corresponding public key
  * in LMDB, and propagating it through Kafka for distributed verification.
  */
-export class DverifyDataSigner implements DataSigner {
+export class DataSigner implements DataSigner {
   private readonly producer?: Producer;          // Kafka producer for publishing public keys
   private db?: any;                     // LMDB database instance for storing keys
   private keyPair!: crypto.KeyPairKeyObjectResult; // Current key pair (rotated periodically)

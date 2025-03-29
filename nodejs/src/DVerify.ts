@@ -1,5 +1,5 @@
-import { DverifyDataSigner } from './implementations/DverifyDataSigner';
-import { DverifyDataVerifier } from './implementations/DverifyDataVerifier';
+import { DataSigner } from './implementations/DataSigner';
+import { DataVerifier } from './implementations/DataVerifier';
 
 export interface SignResponse {
   token: string;
@@ -11,12 +11,12 @@ export interface VerifyResponse<T = any> {
 }
 
 export class DVerify {
-  private readonly signer: DverifyDataSigner;
-  private readonly verifier: DverifyDataVerifier;
+  private readonly signer: DataSigner;
+  private readonly verifier: DataVerifier;
 
   constructor() {
-    this.signer = new DverifyDataSigner();
-    this.verifier = new DverifyDataVerifier();
+    this.signer = new DataSigner();
+    this.verifier = new DataVerifier();
   }
 
   /**
