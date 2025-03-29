@@ -44,6 +44,7 @@ Authenticate users across blockchain-based or federated identity systems.
 - 🏢 Organizations – Strengthen security & ensure trusted communication.
 - 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
 
+---
 
 ## Repository Structure
 ```
@@ -65,21 +66,6 @@ dverify/
 To install DVerify, follow these steps:
 
 ### Java
-- (**Maven**)
-
-```xml
-
-<dependency>
-    <groupId>io.github.cyfko</groupId>
-    <artifactId>dverify</artifactId>
-    <version>2.2.1</version>
-</dependency>
-```
-
-- (**Gradle**)
-```gradle
-implementation 'io.github.cyfko:dverify:2.2.1'
-```
 Visit the [Java documentation](java/README.md) for more details.
 
 ### Python (Upcoming)
@@ -87,9 +73,7 @@ A Python implementation is in development. Stay tuned!
 
 Visit the [Python documentation](python/README.md) for more details.
 
-### Node.js (Upcoming)
-A JavaScript/TypeScript version will be released soon.
-
+### Node.js
 Visit the [Node.js documentation](nodejs/README.md) for more details.
 
 ### C# (.NET) (Upcoming)
@@ -107,18 +91,36 @@ A Go implementation is in development.
 
 Visit tge [Go documentation](go/README.md) for more details.
 
+---
 
-## Environment Variables (Optional)
+## 🔗 Interoperability  
+To ensure compatibility across programming languages, **DVerify** standardizes the broker's (e.g., Kafka) event keys and messages with the following format:  
 
+- **Event Key:** The broker's event key is a string that represents a UUID. This guarantees uniqueness and seamless integration across diverse systems.
+
+- **Message Pattern:** Each broker's message adheres to the following structure:  
+  - `[token config] : [Base64 RSA public key] : [Expiry date seconds] : [Base64 variant]`
+
+  **Components:**  
+  - **[token config]:** Configuration details for the token. Current implementations accept either `jwt` or `uuid` as valid values.  
+  - **[Base64 RSA public key]:** Encoded RSA public key, used for verifying tokens.  
+  - **[Expiry date seconds]:** Specifies the expiration time in seconds, enabling automatic removal of outdated entries.  
+  - **[Base64 variant]:** Represents additional data related to the `[token config]`.  
+    1. For the `jwt` *token config,* this value is optional and may be omitted.  
+    2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
+
+### Environment Variables (Optional)
 The application relies on the following environment variables for configuration:
 
-| Variable Name                     | Description                               | Default Value                                    |
-|------------------------------------|-------------------------------------------|--------------------------------------------------|
+| Variable Name                     | Description                              | Default Value                                    |
+|-----------------------------------|------------------------------------------|--------------------------------------------------|
 | `DVER_CLEANUP_INTERVAL_MINUTES`   | Interval (in minutes) for cleanup tasks  | `60`                                             |
 | `DVER_KAFKA_BOOSTRAP_SERVERS`     | Kafka bootstrap servers                  | `localhost:9092`                                 |
 | `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification       | `token-verifier`                                 |
 | `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                 | `dverify_db_data` (relative to _temp_ directory) |
 | `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation   | `1440` (24h)                                     |
+
+---
 
 ## 🛠 Contributing
 

@@ -1,11 +1,24 @@
-JAVA IMPLEMENTATION
-===================
+# 📦 dverify
 
-# 📦 Installation
+A Java implementation for signing and verifying data encoded in either JWT or UUID, secured with ECDSA keys distributed via Kafka. It relies on **[RocksDB](https://rocksdb.org/)** for persistence and automatic key rotation, ensuring ultra-fast verification and robust security.
+
+---
+
+## ✨ Features
+
+- 🔐 **JWT Signing & Verification** using ES256 (ECDSA)
+- 🔁 **Automatic Key Rotation**
+- 📬 **Public Key Distribution** via Kafka
+- 🧠 **Fast and Persistent Storage** using **[RocksDB](https://rocksdb.org/)**
+- ⚙️ **Environment-Based Configuration** with defaults.
+
+---
+
+## 📦 Installation
 
 To install DVerify, follow these steps:
 
-## 1. Add the Dependency
+### 1. Add the Dependency
 
 For **Maven**:
 
@@ -23,7 +36,7 @@ For **Gradle**:
 implementation 'io.github.cyfko:dverify:2.2.1'
 ```
 
-## 2. Environment Variables (Optional)
+### 2. Environment Variables (Optional)
 
 The application relies on the following environment variables for configuration:
 
@@ -37,12 +50,12 @@ The application relies on the following environment variables for configuration:
 
 > NOTE: The Java implementation uses **[RocksDB](https://rocksdb.org/)** as the embedded database for local storage.
 
-# 🚀 Usage
+## 🚀 Usage
 
 🔑 Basic Token Verification
 
-- ## 1. Transform a data to a JWT token to secure it
-  ### Signing the data
+- ### 1. Transform a data to a JWT token to secure it
+  #### Signing the data
 
     ```java
     import java.util.Properties;
@@ -55,14 +68,14 @@ The application relies on the following environment variables for configuration:
     System.out.println("Generated Token: "+jwt);
     ```
 
-  ### Verifying the JWT token
+  #### Verifying the JWT token
     ```java
     DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
     UserData userData = verifier.verify(jwt, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
-- ## 2 Transform a data to a unique identifier to secure it but without exposing details
-  ### Signing the data
+- ### 2 Transform a data to a unique identifier to secure it but without exposing details
+  #### Signing the data
 
     ```java
     import java.util.Properties;
@@ -76,9 +89,24 @@ The application relies on the following environment variables for configuration:
     System.out.println("Generated ID: "+uniqueId);
     ```
 
-  ### Verifying the Identity token
+  #### Verifying the Identity token
     ```java
     DataVerifier verifier = new KafkaDataVerifier(); // The verifier does not have to change to accommodate to the generated token type!
     UserData userData = verifier.verify(uniqueId, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
+
+---
+
+## 📌 Requirements
+
+- Java >= 21
+- Kafka cluster running
+
+---
+
+## 🔐 Security Considerations
+
+- Uses ES256 (ECDSA with P-256 curve)
+- All public keys are stored and verified from **[RocksDB](https://rocksdb.org/)**
+- Only valid keys within the expiration window are accepted
