@@ -10,7 +10,7 @@ import { config } from '../config';
  * - expiration: Expiration timestamp (in seconds).
  * - keyId: The unique identifier of the key (optional).
  */
-interface KeyRecord {
+export interface KeyRecord {
   publicKey: string;
   expiration: number;
   keyId?: string;
