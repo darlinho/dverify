@@ -5,15 +5,6 @@ import { open } from 'lmdb';
 import { JsonEncodingException } from '../exceptions/JsonEncodingException';
 import { config } from '../config';
 
-/**
- * Represents a key record stored in LMDB.
- * - publicKey: The public key in PEM format.
- * - expiration: Expiration timestamp (in seconds).
- */
-interface KeyRecord {
-  publicKey: string;
-  expiration: number;
-}
 
 /**
  * Dverify is responsible for signing data, storing the corresponding public key
@@ -90,6 +81,7 @@ export class DataSigner implements DataSigner {
    * @param keyId - Unique identifier of the key.
    * @param publicKey - Public key in Base64 format.
    * @param expiration - Expiration timestamp (in seconds).
+   * @param option - data signature and verification configuration
    */
   private async propagatePublicKey(keyId: string, publicKey: string, expiration: number, option?: { type: 'jwt' | 'uuid', variant: string}): Promise<void> {
     let message = `${publicKey}:${expiration}`;
@@ -134,10 +126,6 @@ export class DataSigner implements DataSigner {
         algorithm: 'ES256',
         expiresIn: durationSeconds,
       });
-
-      // Store the public key in LMDB for local verification
-      const keyRecord: KeyRecord = { publicKey: publicKeyPem, expiration };
-      await this.db.put(keyId, keyRecord);
 
       // Propagate the public key to other services via Kafka
       await this.propagatePublicKey(keyId, publicKeyPem, expiration);
