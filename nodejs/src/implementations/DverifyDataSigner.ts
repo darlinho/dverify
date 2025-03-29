@@ -89,11 +89,16 @@ export class DverifyDataSigner implements DataSigner {
   /**
    * Publishes a newly generated public key to Kafka.
    * @param keyId - Unique identifier of the key.
-   * @param publicKey - Public key in PEM format.
+   * @param publicKey - Public key in Base64 format.
    * @param expiration - Expiration timestamp (in seconds).
    */
-  private async propagatePublicKey(keyId: string, publicKey: string, expiration: number): Promise<void> {
-    const message = JSON.stringify({ keyId, publicKey, expiration });
+  private async propagatePublicKey(keyId: string, publicKey: string, expiration: number, option?: { type: 'jwt' | 'uuid', variant: string}): Promise<void> {
+    let message = `${publicKey}:${expiration}`;
+    if (option){
+      message = `${option.type}:${message}:${option.variant}`;
+    } else {
+      message = `jwt:${message}:`;
+    }
     try {
       if (this.producer) {
         await this.producer.send({

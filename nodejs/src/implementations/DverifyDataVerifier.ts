@@ -11,9 +11,10 @@ import { config } from '../config';
  * - keyId: The unique identifier of the key (optional).
  */
 interface KeyRecord {
+  kind: string;
   publicKey: string;
   expiration: number;
-  keyId?: string;
+  variant: string;
 }
 
 /**
@@ -94,18 +95,20 @@ export class DverifyDataVerifier {
       // Convert key from binary to string
       const key = message.key.toString();
       // Parse JSON value to extract publicKey and expiration
-      const value = JSON.parse(message.value.toString());
-
-      // Ensure both publicKey and expiration are present
-      if (value.publicKey && value.expiration) {
-        const record: KeyRecord = {
-          publicKey: value.publicKey,
-          expiration: value.expiration,
-          keyId: value.keyId,
-        };
-        // Store record in LMDB (key = keyId, value = KeyRecord)
-        await this.db.put(key, record);
+      const parts = message.value.toString().split(':');
+      if (parts.length < 4) {
+        throw new Error('Invalid Interoperability format');
       }
+
+      const record: KeyRecord = {
+        kind: parts[0],
+        publicKey: parts[1],
+        expiration: Number.parseInt(parts[2]),
+        variant: parts[3],
+      };
+
+      // Store record in LMDB (key = keyId, value = KeyRecord)
+      await this.db.put(key, record);
     } catch (err) {
       console.error("[DverifyDataVerifier] Error parsing Kafka message:", err);
     }
