@@ -59,7 +59,7 @@ sequenceDiagram
     participant DvSigner as dverify Library (Signer)
     participant Broker as Broker (Event Bus)
     participant DvVerifier as dverify Library (Verifier)
-    participant DB_Verifier as Embedded Database (Verifier)
+    participant DB_Verifier as Embedded Database
 
     %% Signing Phase
     Client->>Signer: Request to sign data
