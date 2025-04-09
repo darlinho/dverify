@@ -44,8 +44,6 @@ Authenticate users across blockchain-based or federated identity systems.
 - 🏢 Organizations – Strengthen security & ensure trusted communication.
 - 🔐 Cybersecurity Professionals – Implement a robust verification mechanism.
 
----
-
 ## Design consideration
 
 ```mermaid
@@ -78,8 +76,6 @@ sequenceDiagram
     DB_Verifier-->>DvVerifier: Return verification result (valid/invalid)
     DvVerifier-->>Client: Deliver result
 ```
-
----
 
 ## Repository Structure
 ```
