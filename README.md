@@ -46,6 +46,41 @@ Authenticate users across blockchain-based or federated identity systems.
 
 ---
 
+## Design consideration
+
+```mermaid
+sequenceDiagram
+    title Optimized DVerify Flow (Distributed Metadata Storage)
+
+    actor Client
+    actor Signer as Signer Microservice
+    actor Verifier as Verifier Microservice
+    
+    participant DvSigner as dverify Library (Signer)
+    participant Broker as Broker (Event Bus)
+    participant DvVerifier as dverify Library (Verifier)
+    participant DB_Verifier as Embedded Database (Verifier)
+
+    %% Signing Phase
+    Client->>Signer: Request to sign data
+    Signer->>DvSigner: sign(data, duration)
+    DvSigner->>Broker: Publish metadata (token ID + additional info)
+    Broker-->>DvSigner: Ack (metadata published)
+    alt Each listening microservice
+        Broker->>DB_Verifier: Store metadata (token ID + additional info)
+    end
+    DvSigner-->>Client: Deliver token
+
+    %% Verification Phase
+    Client->>Verifier: Verify token
+    Verifier->>DvVerifier: verify(token)
+    DvVerifier->>DB_Verifier: Lookup metadata (local)
+    DB_Verifier-->>DvVerifier: Return verification result (valid/invalid)
+    DvVerifier-->>Client: Deliver result
+```
+
+---
+
 ## Repository Structure
 ```
 dverify/
