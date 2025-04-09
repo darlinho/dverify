@@ -50,7 +50,7 @@ Authenticate users across blockchain-based or federated identity systems.
 
 ```mermaid
 sequenceDiagram
-    title Optimized DVerify Flow (Distributed Metadata Storage)
+    title DVerify Flow
 
     actor Client
     actor Signer as Signer Microservice
