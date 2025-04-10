@@ -97,12 +97,7 @@ public class GenericSignerVerifier implements Signer, Verifier {
     @Override
     public <T> T verify(String token, Class<T> clazz) throws DataExtractionException {
         try {
-            String payloadBase64 = token.split("\\.")[1];
-            String payloadJson = new String(Base64.getDecoder().decode(payloadBase64));
-
-            // Parse JSON and extract the "sub" field
-            JsonNode jsonNode = JacksonUtil.fromJson(payloadJson, JsonNode.class);
-            String keyId = jsonNode.get("sub").asText();
+            String keyId = getKeyId(token);
 
             final var data = getClaims(keyId,token).get("data", String.class);
             return JacksonUtil.fromJson(data, clazz);
@@ -110,6 +105,20 @@ public class GenericSignerVerifier implements Signer, Verifier {
             throw e;
         } catch (Exception e){
             throw new DataExtractionException("Failed to extract subject from JWT: " + e.getMessage());
+        }
+    }
+
+    private static String getKeyId(String token) throws Exception {
+        if (token.contains(".")) { // expected to be a JWT token
+            String payloadBase64 = token.split("\\.")[1];
+            String payloadJson = new String(Base64.getDecoder().decode(payloadBase64));
+
+            // Parse JSON and extract the "sub" field
+            JsonNode jsonNode = JacksonUtil.fromJson(payloadJson, JsonNode.class);
+            String keyId = jsonNode.get("sub").asText();
+            return keyId;
+        } else { // expected to be the keyId itself
+            return token;
         }
     }
 
