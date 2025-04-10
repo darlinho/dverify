@@ -5,7 +5,7 @@ import io.github.cyfko.dverify.exceptions.JsonEncodingException;
 import java.time.Duration;
 
 @FunctionalInterface
-public interface DataSigner {
+public interface Signer {
     /**
      * Generates a JWT signed with an asymmetric private key.
      * The not-null `data` parameter is embedded within the token.
@@ -15,5 +15,5 @@ public interface DataSigner {
      * @return A signed JWT as a string.
      * @throws JsonEncodingException If encoding `data` to the JSON format fails or if the Duration is not in the future.
      */
-    String sign(Object data, Duration duration) throws JsonEncodingException;
+    String sign(Object data, Duration duration, TokenMode mode) throws JsonEncodingException;
 }

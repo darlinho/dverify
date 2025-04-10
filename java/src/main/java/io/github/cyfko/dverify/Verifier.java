@@ -3,7 +3,7 @@ package io.github.cyfko.dverify;
 import io.github.cyfko.dverify.exceptions.DataExtractionException;
 
 @FunctionalInterface
-public interface DataVerifier {
+public interface Verifier {
     /**
      * Validates a JWT and extracts its payload as an object.
      *
