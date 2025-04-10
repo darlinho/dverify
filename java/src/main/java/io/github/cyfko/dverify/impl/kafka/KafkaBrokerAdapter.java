@@ -154,7 +154,7 @@ public class KafkaBrokerAdapter implements Broker {
         scheduler.scheduleAtFixedRate(() -> {
             removeOldEmbeddedDatabaseEntries(db);
             saveKafkaMessagesOnEmbeddedDatabase(consumer, db);
-        }, 0, 1, TimeUnit.MINUTES);
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     private String getOrCreateUniqueGroupId() throws RocksDBException {
