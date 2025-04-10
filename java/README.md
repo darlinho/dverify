@@ -51,10 +51,9 @@ The application relies on the following environment variables for configuration:
 
 ## 🚀 Usage
 
-🔑 Basic Token Verification
+### 🔧 Using `GenericSignerVerifier` with a Kafka-based `Broker`
 
-- ### 1. Transform a data to a JWT token to secure it
-  #### Signing the data
+- #### Data signature in the form of transparent token (jwt)
 
     ```java
     import io.github.cyfko.dverify.TokenMode;
@@ -70,14 +69,13 @@ The application relies on the following environment variables for configuration:
     System.out.println("Generated Token: " + jwt); // output >> Generated Token: <JWT>
     ```
 
-  #### Verifying the JWT token
+  #### Verifying the token and extracting the data
     ```java
     import io.github.cyfko.dverify.TokenMode;Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter()); // KafkaBrokerAdapter constructed with default properties
     UserData userData = verifier.verify(jwt, UserData.class, TokenMode.jwt);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
-- ### 2 Transform a data to a unique identifier to secure it but without exposing details
-  #### Signing the data
+- #### Data signature in the form of an opaque token (uuid)
 
     ```java
     import io.github.cyfko.dverify.TokenMode;
@@ -91,12 +89,89 @@ The application relies on the following environment variables for configuration:
     System.out.println("Generated Token: " + token); // output >> Generated Token: <UUID>
     ```
 
-  #### Verifying the Identity token
+  #### Verifying the token and extracting the data
     ```java
     Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter());
     UserData userData = verifier.verify(token, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
+
+### 🔧 Using `GenericSignerVerifier` with a Custom `Broker` (Database-backed)
+
+If you prefer not to use Kafka or want to integrate `dverify` into a monolithic or database-cluster-based architecture, you can implement a custom `Broker` backed by a relational database like MySQL or PostgreSQL.
+
+This is particularly useful for:
+
+- Lightweight deployments without Kafka or messaging systems.
+- Architectures using **sharded database clusters** (e.g., by tenant, region, or service).
+- Centralized monoliths storing verification messages directly in a trusted SQL store.
+
+---
+
+#### Example: `DatabaseBroker` Implementation
+
+```java
+public class DatabaseBroker implements Broker {
+
+    private final DataSource dataSource;
+
+    public DatabaseBroker(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    public CompletableFuture<Void> send(String key, String message) {
+        return CompletableFuture.runAsync(() -> {
+            try (Connection conn = dataSource.getConnection()) {
+                try (PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO broker_messages (message_key, message_value, created_at) VALUES (?, ?, NOW())")) {
+                    stmt.setString(1, key);
+                    stmt.setString(2, message);
+                    stmt.executeUpdate();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to store message in DB", e);
+            }
+        });
+    }
+
+    @Override
+    public String get(String keyId) {
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT message_value FROM broker_messages WHERE message_key = ? ORDER BY created_at DESC LIMIT 1")) {
+                stmt.setString(1, keyId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getString("message_value");
+                } else {
+                    throw new DataExtractionException("Message not found for key: " + keyId);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataExtractionException("Failed to retrieve message from DB", e);
+        }
+    }
+}
+```
+
+Using `DatabaseBroker` Implementation
+
+```java
+import io.github.cyfko.dverify.TokenMode;
+
+DataSource ds = ... // Configure your JDBC DataSource (HikariCP, etc.)
+Broker broker = new DatabaseBroker(ds);
+
+GenericSignerVerifier signerVerifier = GenericSignerVerifier(broker);
+
+// Use as usual
+String jwt = signerVerifier.sign("service #1", Duration.ofHours(15), TokenMode.jwt);
+String serviceName1 = signerVerifier.verify(jwt, String.class); // Expected: serviceName1.equals("service #1")
+
+String uuid = signerVerifier.sign("service #2", Duration.ofHours(15), TokenMode.uuid);
+String serviceName2 = signerVerifier.verify(uuid, String.class); // Expected: serviceName2.equals("service #2")
+```
 
 ---
 

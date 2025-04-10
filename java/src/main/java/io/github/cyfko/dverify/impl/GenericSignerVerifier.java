@@ -1,10 +1,9 @@
 package io.github.cyfko.dverify.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.github.cyfko.dverify.*;
 import io.github.cyfko.dverify.Signer;
-import io.github.cyfko.dverify.TokenMode;
 import io.github.cyfko.dverify.Verifier;
-import io.github.cyfko.dverify.Broker;
 import io.github.cyfko.dverify.exceptions.DataExtractionException;
 import io.github.cyfko.dverify.exceptions.JsonEncodingException;
 import io.github.cyfko.dverify.impl.kafka.Constant;
@@ -12,10 +11,7 @@ import io.github.cyfko.dverify.util.JacksonUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
@@ -23,74 +19,115 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
+/**
+ * Default implementation of both {@link Signer} and {@link Verifier} interfaces using ephemeral asymmetric keys.
+ *
+ * <p>This class handles:</p>
+ * <ul>
+ *   <li>Signing objects into time-bound JWT tokens (or UUIDs, depending on {@link TokenMode})</li>
+ *   <li>Periodic generation (rotation) of RSA key pairs used for signing</li>
+ *   <li>Publishing cryptographic metadata to a {@link Broker}, for verification by distributed consumers</li>
+ *   <li>Verifying tokens using the public key advertised by the token issuer</li>
+ * </ul>
+ *
+ * <p>
+ * The metadata pushed to the broker includes:
+ * <pre>
+ *   [mode]:[base64-encoded public key]:[expiry timestamp in millis]:[optional token (if uuid mode)]
+ * </pre>
+ * </p>
+ *
+ * <p>This implementation is well-suited for stateless verification in distributed systems
+ * where private keys are short-lived and verification relies on previously published public key metadata.
+ * </p>
+ *
+ * @author Frank KOSSI
+ * @since 3.0.0
+ */
 public class GenericSignerVerifier implements Signer, Verifier {
-    private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(GenericSignerVerifier.class);
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GenericSignerVerifier.class);
     private static final KeyFactory keyFactory;
-    private long lastExecutionTime = 0;
+
     private final Broker broker;
     private final ScheduledExecutorService scheduler;
     private KeyPair keyPair;
+    private long lastExecutionTime = 0;
 
     static {
         try {
             keyFactory = KeyFactory.getInstance(Constant.ASYMMETRIC_KEYPAIR_ALGORITHM);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to initialize KeyFactory: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Constructs a new {@code GenericSignerVerifier} with the given metadata broker.
+     * <p>
+     * On creation, a key pair is immediately generated, and a recurring task is scheduled
+     * to rotate keys at fixed intervals.
+     * </p>
+     *
+     * @param broker the broker used to publish public key metadata to consumers
+     */
     public GenericSignerVerifier(Broker broker) {
         this.broker = broker;
 
-        // generate the first KeyPair.
+        // Generate initial key pair
         generatedKeysPair();
 
-        // Schedule the keys-pair generation task to run at a fixed rate.
+        // Schedule periodic key rotation
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this::generatedKeysPair, 0, Constant.KEYS_ROTATION_MINUTES, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(
+                this::generatedKeysPair,
+                0,
+                Constant.KEYS_ROTATION_MINUTES,
+                TimeUnit.MINUTES
+        );
     }
 
     @Override
     public String sign(Object data, Duration duration, TokenMode mode) throws JsonEncodingException {
         if (data == null || duration == null || duration.isNegative()) {
-            throw new IllegalArgumentException("data should not be null and the duration should be positive");
+            throw new IllegalArgumentException("data must not be null and duration must be positive");
         }
 
         final String keyId = UUID.randomUUID().toString();
-        String token = "";
+        String token;
 
         try {
-            Instant fromNow = Instant.now();
-            Date issuedAt = Date.from(fromNow);
-            Date expirationDate = Date.from(fromNow.plus(duration));
+            Instant now = Instant.now();
+            Date issuedAt = Date.from(now);
+            Date expiration = Date.from(now.plus(duration));
 
+            // Serialize the payload and sign the JWT
             token = Jwts.builder()
                     .subject(keyId)
                     .claim("data", JacksonUtil.toJson(data))
                     .issuedAt(issuedAt)
-                    .expiration(expirationDate)
+                    .expiration(expiration)
                     .signWith(keyPair.getPrivate())
                     .compact();
 
-            final String base64PublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-            final String message = switch (mode){
-                case TokenMode.jwt -> String.format("%s:%s:%s:%s", mode.name(), base64PublicKey, expirationDate.getTime(), "");
-                case TokenMode.uuid -> String.format("%s:%s:%s:%s", mode.name(), base64PublicKey, expirationDate.getTime(), token);
+            // Publish metadata to broker
+            String publicKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
+            String metadata = switch (mode) {
+                case jwt -> String.format("%s:%s:%d:", mode.name(), publicKeyBase64, expiration.getTime());
+                case uuid -> String.format("%s:%s:%d:%s", mode.name(), publicKeyBase64, expiration.getTime(), token);
             };
 
-            broker.send(keyId, message).get(3, TimeUnit.MINUTES);
-            return mode == TokenMode.jwt ? token : keyId;
+            broker.send(keyId, metadata).get(3, TimeUnit.MINUTES);
+
+            return (mode == TokenMode.jwt) ? token : keyId;
         } catch (ExecutionException | InterruptedException e) {
-            log.error("Unable to propagate metadata after signing: {}", e.getMessage());
-            handleTransportFailure(keyId,token,mode);
-            return mode == TokenMode.jwt ? token : keyId;
-        } catch (Exception e){
-            throw new JsonEncodingException(e.getMessage());
+            log.error("Failed to send metadata to broker for keyId {}: {}", keyId, e.getMessage());
+            handleTransportFailure(keyId, token = "", mode);
+            return (mode == TokenMode.jwt) ? token : keyId;
+        } catch (Exception e) {
+            throw new JsonEncodingException("Failed to encode or sign data: " + e.getMessage());
         }
     }
 
@@ -98,80 +135,99 @@ public class GenericSignerVerifier implements Signer, Verifier {
     public <T> T verify(String token, Class<T> clazz) throws DataExtractionException {
         try {
             String keyId = getKeyId(token);
-
-            final var data = getClaims(keyId,token).get("data", String.class);
-            return JacksonUtil.fromJson(data, clazz);
-        } catch (DataExtractionException|IndexOutOfBoundsException e) {
+            Claims claims = getClaims(keyId, token);
+            String json = claims.get("data", String.class);
+            return JacksonUtil.fromJson(json, clazz);
+        } catch (DataExtractionException | IndexOutOfBoundsException e) {
             throw e;
-        } catch (Exception e){
-            throw new DataExtractionException("Failed to extract subject from JWT: " + e.getMessage());
-        }
-    }
-
-    private static String getKeyId(String token) throws Exception {
-        if (token.contains(".")) { // expected to be a JWT token
-            String payloadBase64 = token.split("\\.")[1];
-            String payloadJson = new String(Base64.getDecoder().decode(payloadBase64));
-
-            // Parse JSON and extract the "sub" field
-            JsonNode jsonNode = JacksonUtil.fromJson(payloadJson, JsonNode.class);
-            String keyId = jsonNode.get("sub").asText();
-            return keyId;
-        } else { // expected to be the keyId itself
-            return token;
+        } catch (Exception e) {
+            throw new DataExtractionException("Failed to extract or deserialize data from token: " + e.getMessage());
         }
     }
 
     /**
-     * Remember: the Kafka event message should be a message where the key is <strong>publicKeyId</strong> and the value is a {@link java.lang.String} that
-     * strictly follows the convention: <code>[token config]</code> <code>:</code> <code>[Base64 RSA public key]</code> <code>:</code> <code>[Expiry date seconds]</code> <code>:</code> <code>[Base64 variant]</code>
-     * @param keyId The RSA public key used to verify the token.
-     * @param token The token embedding the desired data.
-     * @return A token to be used to refer to the desired data. It depends on the value attached to the property {@link io.github.cyfko.dverify.impl.kafka.SignerConfig }<code>.GENERATED_TOKEN_CONFIG</code> .
+     * Determines the key identifier for a given token.
+     * <p>
+     * If the token appears to be a JWT (i.e., contains dot separators), it extracts the {@code sub} field
+     * from the payload. Otherwise, it assumes the token itself *is* the key ID (UUID mode).
+     *
+     * @param token the token whose key ID is to be determined
+     * @return the resolved key ID
+     * @throws Exception if the JWT is malformed or payload decoding fails
+     */
+    private static String getKeyId(String token) throws Exception {
+        if (token.contains(".")) {
+            String payloadBase64 = token.split("\\.")[1];
+            String payloadJson = new String(Base64.getDecoder().decode(payloadBase64));
+            JsonNode node = JacksonUtil.fromJson(payloadJson, JsonNode.class);
+            return node.get("sub").asText();
+        }
+        return token;
+    }
+
+    /**
+     * Retrieves and parses the JWT claims using metadata fetched from the broker.
+     *
+     * @param keyId the key ID used to retrieve metadata
+     * @param token the input token (either the JWT or the UUID)
+     * @return parsed claims from the appropriate token
      */
     private Claims getClaims(String keyId, String token) {
         String[] parts = broker.get(keyId).split(":");
         try {
-            byte[] decodedKey = Base64.getDecoder().decode(parts[1]);
-            final PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(decodedKey));
+            byte[] publicKeyBytes = Base64.getDecoder().decode(parts[1]);
+            PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyBytes));
 
-            return switch (TokenMode.valueOf(parts[0])){
-                case TokenMode.jwt -> Jwts.parser()
+            return switch (TokenMode.valueOf(parts[0])) {
+                case jwt -> Jwts.parser()
                         .verifyWith(publicKey)
                         .build()
                         .parseSignedClaims(token)
                         .getPayload();
 
-                case TokenMode.uuid -> Jwts.parser()
+                case uuid -> Jwts.parser()
                         .verifyWith(publicKey)
                         .build()
                         .parseSignedClaims(parts[3])
                         .getPayload();
             };
         } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to rebuild public key: " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unexpected token config encountered: " + e.getMessage());
+            throw new IllegalArgumentException("Unexpected token format or metadata: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Fallback logic triggered when metadata propagation fails during {@code sign()}.
+     *
+     * @param keyId the generated key ID
+     * @param token the generated token
+     * @param mode  the current {@link TokenMode}
+     */
     private void handleTransportFailure(String keyId, String token, TokenMode mode) {
-        // TODO: try to send metadata again
+        // TODO: implement retry/backoff strategy if needed
     }
 
+    /**
+     * Generates a new ephemeral asymmetric key pair.
+     * <p>
+     * This method is invoked on a schedule, and will only rotate the key pair
+     * if sufficient time has elapsed since the last generation.
+     * </p>
+     */
     private void generatedKeysPair() {
-        long currentTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        // Check if the last execution was within the last KEYS_ROTATION_RATE_MINUTES
-        if (currentTime - lastExecutionTime >= Constant.KEYS_ROTATION_MINUTES * 60 * 1000 || lastExecutionTime == 0) {
+        if (now - lastExecutionTime >= Constant.KEYS_ROTATION_MINUTES * 60 * 1000 || lastExecutionTime == 0) {
             try {
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(Constant.ASYMMETRIC_KEYPAIR_ALGORITHM);
-
-                keyPair = keyPairGenerator.generateKeyPair();
+                KeyPairGenerator generator = KeyPairGenerator.getInstance(Constant.ASYMMETRIC_KEYPAIR_ALGORITHM);
+                keyPair = generator.generateKeyPair();
+                log.info("Ephemeral key pair rotated.");
             } catch (Exception e) {
-                log.error("Error generating keys-pair: {}", e.getMessage());
+                log.error("Failed to generate key pair: {}", e.getMessage());
             } finally {
-                lastExecutionTime = currentTime;
+                lastExecutionTime = now;
             }
         }
     }

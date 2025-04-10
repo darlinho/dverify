@@ -23,6 +23,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A Kafka-based implementation of the {@link io.github.cyfko.dverify.Broker} interface that integrates Kafka messaging
+ * with an embedded RocksDB key-value store for persistent message tracking and retrieval.
+ *
+ * <p>This broker adapter supports both sending messages (public keys or signed tokens) to a Kafka topic and retrieving
+ * them using a UUID-based mechanism. Kafka messages are asynchronously persisted in a RocksDB database for later retrieval,
+ * which is useful when using UUID-based token modes.</p>
+ *
+ * <p>Features:</p>
+ * <ul>
+ *   <li>Kafka producer and consumer integration</li>
+ *   <li>Embedded RocksDB for message persistence and retrieval</li>
+ *   <li>Automatic background processing to persist Kafka records and remove expired entries</li>
+ *   <li>Pluggable configuration via {@link Properties}</li>
+ * </ul>
+ *
+ * <p>Required Kafka property:</p>
+ * <ul>
+ *   <li>{@link org.apache.kafka.clients.producer.ProducerConfig#BOOTSTRAP_SERVERS_CONFIG} - Kafka cluster endpoint(s)</li>
+ * </ul>
+ *
+ * @see io.github.cyfko.dverify.Broker
+ * @see org.apache.kafka.clients.producer.KafkaProducer
+ * @see org.apache.kafka.clients.consumer.KafkaConsumer
+ * @see org.rocksdb.RocksDB
+ */
 public class KafkaBrokerAdapter implements Broker {
     private static final org.slf4j.Logger log = org. slf4j. LoggerFactory. getLogger(KafkaBrokerAdapter.class);
     private final KafkaProducer<String,String> producer;
@@ -48,18 +74,11 @@ public class KafkaBrokerAdapter implements Broker {
     }
 
     /**
-     * Construct an instance of the <code>KafkaTransporter</code>, mixing environment properties and the provided
-     * <code>Properties</code>.
-     * Note that some properties will be discarded if they don't match to the way KafkaTransporter works.
+     * Factory method to create a KafkaBrokerAdapter from custom properties.
      *
-     * @implNote Recognized properties are those defined by {@link org.apache.kafka.clients.producer.ProducerConfig} and
-     * {@link io.github.cyfko.dverify.impl.kafka.SignerConfig} classes.
-     * <ul>
-     *    <li><code>{@link org.apache.kafka.clients.producer.ProducerConfig}.BOOTSTRAP_SERVERS_CONFIG</code> <sup><small>[REQUIRED]</small></sup> as specified by Kafka</li>
-     * </ul>
-     *
-     * @param props initial Properties to use to construct the KafkaTransporter.
-     * @throws IllegalArgumentException if any of the <strong><small>[REQUIRED]</small></strong> key is not found in <code>props</code>.
+     * @param props Kafka + DVerify properties.
+     * @return a new instance of KafkaBrokerAdapter.
+     * @throws IllegalArgumentException if required properties are missing.
      */
     public static KafkaBrokerAdapter of(Properties props){
         if (!props.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)){
@@ -102,20 +121,29 @@ public class KafkaBrokerAdapter implements Broker {
     }
 
     /**
-     * Construct a KafkaTransporter using the provided `boostrapServers`.
-     * @param boostrapServers the value to assign to the property `ProducerConfig.BOOTSTRAP_SERVERS_CONFIG`.
+     * Construct a KafkaBrokerAdapter using a custom bootstrap server string.
+     *
+     * @param boostrapServers Kafka bootstrap server(s) to connect to.
      */
     public KafkaBrokerAdapter(String boostrapServers) {
         this(PropertiesUtil.of(defaultKafkaProperties(), boostrapServers));
     }
 
     /**
-     * Construct a KafkaDataSigner with defaults properties.
+     * Construct a KafkaBrokerAdapter using only the default Kafka properties.
      */
     public KafkaBrokerAdapter() {
         this(defaultKafkaProperties());
     }
 
+    /**
+     * Sends a message to the configured Kafka topic using the provided key.
+     * The message may later be fetched from an embedded RocksDB store.
+     *
+     * @param key the unique identifier to associate the message with.
+     * @param message the message content to send.
+     * @return a CompletableFuture that completes when the message is successfully sent or fails.
+     */
     @Override
     public CompletableFuture<Void> send(String key, String message) {
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -131,6 +159,14 @@ public class KafkaBrokerAdapter implements Broker {
         return future;
     }
 
+    /**
+     * Retrieves a stored message by key from the embedded RocksDB store.
+     * If the message is not found, a {@link DataExtractionException} is thrown.
+     *
+     * @param keyId the unique identifier of the message.
+     * @return the corresponding message content.
+     * @throws DataExtractionException if the key does not exist or database access fails.
+     */
     @Override
     public String get(String keyId) {
         try {
@@ -148,7 +184,7 @@ public class KafkaBrokerAdapter implements Broker {
     }
 
     /**
-     * Starts a background thread that periodically deletes expired entries based on a custom predicate.
+     * Periodically persists Kafka messages and purges expired keys from RocksDB.
      */
     private void scheduleAsyncWork() {
         scheduler.scheduleAtFixedRate(() -> {
@@ -157,6 +193,12 @@ public class KafkaBrokerAdapter implements Broker {
         }, 0, 1, TimeUnit.SECONDS);
     }
 
+    /**
+     * Fetches or generates a persistent group ID used by the Kafka consumer.
+     *
+     * @return a stable group ID, persisted in RocksDB.
+     * @throws RocksDBException if retrieval or persistence fails.
+     */
     private String getOrCreateUniqueGroupId() throws RocksDBException {
         byte[] idByte = db.get(ConstantDefault.UNIQUE_BROKER_GROUP_ID_KEY.getBytes());
         if (idByte == null) {
@@ -166,6 +208,9 @@ public class KafkaBrokerAdapter implements Broker {
         return new String(idByte);
     }
 
+    /**
+     * Releases RocksDB and RocksDB Options resources gracefully.
+     */
     private void closeDB() {
         if (db != null) {
             db.close(); // Closes database connection
@@ -175,6 +220,13 @@ public class KafkaBrokerAdapter implements Broker {
         }
     }
 
+
+    /**
+     * Polls Kafka messages and saves them into RocksDB using their key as the DB key.
+     *
+     * @param consumer the KafkaConsumer instance.
+     * @param db the RocksDB database.
+     */
     private static void saveKafkaMessagesOnEmbeddedDatabase(KafkaConsumer<String,String> consumer, RocksDB db) {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10)); // At most 10 seconds to wait for.
         for (var record: records) {
@@ -187,6 +239,11 @@ public class KafkaBrokerAdapter implements Broker {
         }
     }
 
+    /**
+     * Iterates through all RocksDB entries and removes those considered expired based on timestamp logic.
+     *
+     * @param db the RocksDB instance.
+     */
     private static void removeOldEmbeddedDatabaseEntries(RocksDB db) {
         try (RocksIterator iterator = db.newIterator()) {
             long now = System.currentTimeMillis();
