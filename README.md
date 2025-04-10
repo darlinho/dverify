@@ -140,19 +140,6 @@ To ensure compatibility across programming languages, **DVerify** standardizes t
     1. For the `jwt` *token config,* this value is optional and may be omitted.  
     2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
 
-### Environment Variables (Optional)
-The application relies on the following environment variables for configuration:
-
-| Variable Name                     | Description                              | Default Value                                    |
-|-----------------------------------|------------------------------------------|--------------------------------------------------|
-| `DVER_CLEANUP_INTERVAL_MINUTES`   | Interval (in minutes) for cleanup tasks  | `60`                                             |
-| `DVER_KAFKA_BOOSTRAP_SERVERS`     | Kafka bootstrap servers                  | `localhost:9092`                                 |
-| `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification       | `token-verifier`                                 |
-| `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                 | `dverify_db_data` (relative to _temp_ directory) |
-| `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation   | `1440` (24h)                                     |
-
----
-
 ## 🛠 Contributing
 
 We welcome contributions from the community! Follow these steps:
