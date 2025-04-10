@@ -106,8 +106,6 @@ This is particularly useful for:
 - Architectures using **sharded database clusters** (e.g., by tenant, region, or service).
 - Centralized monoliths storing verification messages directly in a trusted SQL store.
 
----
-
 #### Example: `DatabaseBroker` Implementation
 
 ```java
