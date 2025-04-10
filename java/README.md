@@ -27,7 +27,7 @@ For **Maven**:
 <dependency>
     <groupId>io.github.cyfko</groupId>
     <artifactId>dverify</artifactId>
-    <version>2.2.1</version>
+    <version>3.0.1</version>
 </dependency>
 ```
 
