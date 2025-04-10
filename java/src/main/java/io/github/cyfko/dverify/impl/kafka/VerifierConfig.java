@@ -13,9 +13,4 @@ public abstract class VerifierConfig {
      * The value that should be associated to this property name must meet the Kafka topic name restriction (if any).
      */
     public static final String BROKER_TOPIC_CONFIG = "dverify.broker.topic";
-
-    /**
-     * The value that should be associated to this property name must be a positive long (if any).
-     */
-    public static final String CLEANUP_INTERVAL_CONFIG = "dverify.intervals.cleanup";
 }

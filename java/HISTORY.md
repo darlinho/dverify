@@ -1,5 +1,15 @@
 # DVerify Change Log
 
+## 3.0.0 (10/04/2025)
+### Public API Changes
+* Renaming interface `DataSigner` -> `Signer` and adding third parameter on the `Signer.sign()` method.
+* Renaming interface `DataVerifier` -> `Verifier`.
+* Adding `Broker` interface to handle metadata propagation and retrieval according to the design.
+* Removing `KafkaDataSigner` and `KafkaDataVerifier` implementation classes.
+* Adding `GenericSignerVerifier` class to handle token generation by signing a data and token verification by extracting
+  the data when possible. That class serve as a useful implementation `Signer` and `Verifier` interface and rely on an 
+  implementation of `Broker` interface as its unique constructor parameter.
+
 ## 2.2.0 (05/03/2025)
 ### Behavior Changes
 * Relying on scheduled task to automatically remove expired entries on the embedded database.

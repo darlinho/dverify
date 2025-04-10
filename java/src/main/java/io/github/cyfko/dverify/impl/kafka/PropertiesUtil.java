@@ -27,27 +27,8 @@ abstract class PropertiesUtil {
             props.setProperty(VerifierConfig.BROKER_TOPIC_CONFIG, Constant.KAFKA_TOKEN_VERIFIER_TOPIC);
         }
 
-        if (!props.containsKey(VerifierConfig.CLEANUP_INTERVAL_CONFIG)){
-            props.setProperty(VerifierConfig.CLEANUP_INTERVAL_CONFIG, ""+Constant.CLEANUP_INTERVAL_MINUTES);
-        } else {
-            try {
-                String property = props.getProperty(VerifierConfig.CLEANUP_INTERVAL_CONFIG);
-                if (Long.parseLong(property) < 1L) throw new NumberFormatException();
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("VerifierConfig.CLEANUP_INTERVAL_CONFIG mapped value is not valid duration. Should be a positive Long\n" + e.getMessage());
-            }
-        }
-
         if (!props.containsKey(SignerConfig.BROKER_TOPIC_CONFIG)){
             props.setProperty(SignerConfig.BROKER_TOPIC_CONFIG, Constant.KAFKA_TOKEN_VERIFIER_TOPIC);
-        }
-
-        if (!props.containsKey(SignerConfig.GENERATED_TOKEN_CONFIG)){
-            props.setProperty(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_JWT);
-        } else {
-            String property = props.getProperty(SignerConfig.GENERATED_TOKEN_CONFIG);
-            if (!( property.equals(Constant.GENERATED_TOKEN_JWT) || property.equals(Constant.GENERATED_TOKEN_IDENTITY)))
-                throw new IllegalArgumentException("SignerConfig.GENERATED_TOKEN_CONFIG mapped value is not recognized");
         }
     }
 

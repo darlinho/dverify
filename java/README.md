@@ -40,13 +40,12 @@ implementation 'io.github.cyfko:dverify:2.2.1'
 
 The application relies on the following environment variables for configuration:
 
-| Variable Name                     | Description                               | Default Value                                    |
-|------------------------------------|-------------------------------------------|--------------------------------------------------|
-| `DVER_CLEANUP_INTERVAL_MINUTES`   | Interval (in minutes) for cleanup tasks  | `60`                                             |
-| `DVER_KAFKA_BOOSTRAP_SERVERS`     | Kafka bootstrap servers                  | `localhost:9092`                                 |
-| `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification       | `token-verifier`                                 |
-| `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                 | `dverify_db_data` (relative to _temp_ directory) |
-| `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation   | `1440` (24h)                                     |
+| Variable Name                     | Description                             | Default Value                                    |
+|-----------------------------------|-----------------------------------------|--------------------------------------------------|
+| `DVER_KAFKA_BOOSTRAP_SERVERS`     | Kafka bootstrap servers                 | `localhost:9092`                                 |
+| `DVER_TOKEN_VERIFIER_TOPIC`       | Kafka topic for token verification      | `token-verifier`                                 |
+| `DVER_EMBEDDED_DATABASE_PATH`     | Path for RocksDB storage                | `dverify_db_data` (relative to _temp_ directory) |
+| `DVER_KEYS_ROTATION_MINUTES`      | Interval (in minutes) for key rotation  | `1440` (24h)                                     |
 
 > NOTE: The Java implementation uses **[RocksDB](https://rocksdb.org/)** as the embedded database for local storage.
 
@@ -58,41 +57,44 @@ The application relies on the following environment variables for configuration:
   #### Signing the data
 
     ```java
+    import io.github.cyfko.dverify.TokenMode;
+    import io.github.cyfko.dverify.impl.GenericSignerVerifier;
+    import io.github.cyfko.dverify.impl.kafka.KafkaBrokerAdapter;
     import java.util.Properties;
     
     Properties properties = new Properties();
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     
-    DataSigner signer = KafkaDataSigner.of(properties);
-    String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
-    System.out.println("Generated Token: "+jwt);
+    Signer signer = new GenericSignerVerifier(KafkaBrokerAdapter.of(properties));
+    String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.jwt);
+    System.out.println("Generated Token: " + jwt); // output >> Generated Token: <JWT>
     ```
 
   #### Verifying the JWT token
     ```java
-    DataVerifier verifier = new KafkaDataVerifier(); // will use the default config
-    UserData userData = verifier.verify(jwt, UserData.class);
+    import io.github.cyfko.dverify.TokenMode;Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter()); // KafkaBrokerAdapter constructed with default properties
+    UserData userData = verifier.verify(jwt, UserData.class, TokenMode.jwt);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
 - ### 2 Transform a data to a unique identifier to secure it but without exposing details
   #### Signing the data
 
     ```java
+    import io.github.cyfko.dverify.TokenMode;
     import java.util.Properties;
     
     Properties properties = new Properties();
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-    properties.setProperty(SignerConfig.GENERATED_TOKEN_CONFIG, Constant.GENERATED_TOKEN_IDENTITY);
     
-    DataSigner signer = KafkaDataSigner.of(properties);
-    String uniqueId = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2));
-    System.out.println("Generated ID: "+uniqueId);
+    Signer signer = new GenericSignerVerifier(KafkaBrokerAdapter.of(properties));
+    String token = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.uuid);
+    System.out.println("Generated Token: " + token); // output >> Generated Token: <UUID>
     ```
 
   #### Verifying the Identity token
     ```java
-    DataVerifier verifier = new KafkaDataVerifier(); // The verifier does not have to change to accommodate to the generated token type!
-    UserData userData = verifier.verify(uniqueId, UserData.class);
+    Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter());
+    UserData userData = verifier.verify(token, UserData.class);
     System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
     ```
 
