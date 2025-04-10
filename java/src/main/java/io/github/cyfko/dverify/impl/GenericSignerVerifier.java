@@ -34,9 +34,9 @@ import java.util.concurrent.*;
  *
  * <p>
  * The metadata pushed to the broker includes:
- * <pre>
+ * <code>
  *   [mode]:[base64-encoded public key]:[expiry timestamp in millis]:[optional token (if uuid mode)]
- * </pre>
+ * </code>
  * </p>
  *
  * <p>This implementation is well-suited for stateless verification in distributed systems
@@ -66,6 +66,7 @@ public class GenericSignerVerifier implements Signer, Verifier {
 
     /**
      * Constructs a new {@code GenericSignerVerifier} with the given metadata broker.
+     *
      * <p>
      * On creation, a key pair is immediately generated, and a recurring task is scheduled
      * to rotate keys at fixed intervals.
