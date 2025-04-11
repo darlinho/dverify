@@ -3,6 +3,13 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { open } from 'lmdb';
 import crypto from 'crypto';
 import { config } from '../config';
+import {
+  InvalidTokenException,
+  KeyNotFoundException,
+  KeyExpiredException,
+  VerificationFailedException,
+  ReplayInProgressException,
+} from '../exceptions';
 
 /**
  * Represents a key record stored in LMDB.
@@ -86,33 +93,49 @@ export class DataVerifier {
    * @param message - Kafka message containing the public key data.
    */
   private async handleKafkaMessage({ message }: EachMessagePayload): Promise<void> {
-    // Validate the message
     if (!message.key || !message.value) {
       console.warn("[DataVerifier] Invalid Kafka message (missing key or value). Ignoring.");
       return;
     }
+
+    const key = message.key.toString();
+    const rawValue = message.value.toString();
+
     try {
-      // Convert key from binary to string
-      const key = message.key.toString();
-      // Parse JSON value to extract publicKey and expiration
-      const parts = message.value.toString().split(':');
+      // Ignore legacy or malformed messages
+      if (!rawValue.includes(':')) {
+        console.warn(`[DataVerifier] Skipping unstructured message for key ${key}:`, rawValue);
+        return;
+      }
+
+      const parts = rawValue.split(':');
+
       if (parts.length < 4) {
-        throw new Error('Invalid Interoperability format');
+        console.warn(`[DataVerifier] Invalid message format for key ${key}. Expected 4 parts, got ${parts.length}. Value:`, rawValue);
+        return;
+      }
+
+      const [kind, publicKey, expirationStr, variant] = parts;
+      const expiration = Number.parseInt(expirationStr);
+
+      if (!publicKey || isNaN(expiration)) {
+        throw new Error('Parsed public key or expiration is invalid');
       }
 
       const record: KeyRecord = {
-        kind: parts[0],
-        publicKey: parts[1],
-        expiration: Number.parseInt(parts[2]),
-        variant: parts[3],
+        kind,
+        publicKey,
+        expiration,
+        variant,
       };
 
-      // Store record in LMDB (key = keyId, value = KeyRecord)
       await this.db.put(key, record);
+      console.log(`[DataVerifier] Public key stored (keyId=${key}, kind=${kind}, variant=${variant}).`);
     } catch (err) {
-      console.error("[DataVerifier] Error parsing Kafka message:", err);
+      console.error(`[DataVerifier] Error parsing Kafka message for key ${key}:`, err);
     }
   }
+
 
   /**
    * Verifies a JWT signed with ES256. If the corresponding public key is not found in LMDB,
@@ -125,13 +148,13 @@ export class DataVerifier {
     // Decode the JWT to access its payload
     const decoded = jwt.decode(token, { complete: true });
     if (!decoded || typeof decoded !== 'object' || !('payload' in decoded)) {
-      throw new Error('Invalid or malformed token.');
+      throw new InvalidTokenException('The provided token is malformed or invalid.');
     }
     const payload = decoded.payload as JwtPayload;
 
     // Ensure the keyId field exists in the payload
     if (!payload.keyId) {
-      throw new Error('Missing key ID in token.');
+      throw new InvalidTokenException('Missing "keyId" in the token payload.');
     }
 
     // Look for the public key in LMDB
@@ -143,14 +166,14 @@ export class DataVerifier {
       // Retry fetching the key after replay
       keyRecord = await this.db.get(payload.keyId);
       if (!keyRecord) {
-        throw new Error(`Public key not found after replay (keyId=${payload.keyId}).`);
+        throw new KeyNotFoundException(payload.keyId);
       }
     }
 
     // Ensure the key is not expired
     const now = Math.floor(Date.now() / 1000);
     if (keyRecord.expiration < now) {
-      throw new Error(`Public key expired (keyId=${payload.keyId}).`);
+      throw new KeyExpiredException(payload.keyId);
     }
 
     // Perform cryptographic token verification
@@ -163,11 +186,11 @@ export class DataVerifier {
 
       // Ensure the token contains data
       if (!verifiedPayload.data) {
-        throw new Error("Missing data in token.");
+        throw new InvalidTokenException("Missing data in token.");
       }
       return verifiedPayload.data as T;
-    } catch (error) {
-      throw new Error(`Cryptographic verification failed: ${error}`);
+    } catch (error: any) {
+      throw new VerificationFailedException(error.message);
     }
   }
 
@@ -178,8 +201,7 @@ export class DataVerifier {
   private async replayKeysFromBeginning(): Promise<void> {
     // Prevent multiple concurrent replays
     if (this.isReplaying) {
-      console.log('[DataVerifier] Replay already in progress, waiting...');
-      return;
+      throw new ReplayInProgressException();
     }
     this.isReplaying = true;
 
