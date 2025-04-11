@@ -2,8 +2,8 @@ import { Kafka, Producer } from 'kafkajs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { open } from 'lmdb';
-import { JsonEncodingException } from '../exceptions/JsonEncodingException';
 import { config } from '../config';
+import {JsonEncodingException} from "../exceptions";
 
 
 /**

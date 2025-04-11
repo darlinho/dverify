@@ -32,3 +32,10 @@ export class VerificationFailedException extends Error {
     this.name = 'VerificationFailedException';
   }
 }
+
+export class JsonEncodingException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'JsonEncodingException';
+  }
+}
