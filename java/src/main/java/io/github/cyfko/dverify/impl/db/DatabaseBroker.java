@@ -118,7 +118,7 @@ public class DatabaseBroker implements Broker {
             BEGIN
                 CREATE TABLE %s (
                     %s,
-                    %s VARCHAR(255) NOT NULL,
+                    %s VARCHAR(255) NOT NULL UNIQUE,
                     %s TEXT NOT NULL,
                     %s
                 )
@@ -129,7 +129,7 @@ public class DatabaseBroker implements Broker {
         return String.format("""
         CREATE TABLE IF NOT EXISTS %s (
             %s,
-            %s VARCHAR(255) NOT NULL,
+            %s VARCHAR(255) NOT NULL UNIQUE,
             %s TEXT NOT NULL,
             %s
         )
