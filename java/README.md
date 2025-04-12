@@ -133,9 +133,6 @@ import io.github.cyfko.dverify.GenericSignerVerifier;
 DataSource dataSource = // obtain via HikariCP, Spring, etc.
 String tableName = "broker_messages";
 
-DataSource ds = ... // Configure your JDBC DataSource (HikariCP, etc.)
-Broker broker = new DatabaseBroker(ds);
-
 DatabaseBroker broker = new DatabaseBroker(dataSource, tableName);
 GenericSignerVerifier signerVerifier = new GenericSignerVerifier(broker);
 
