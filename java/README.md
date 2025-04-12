@@ -27,13 +27,13 @@ For **Maven**:
 <dependency>
     <groupId>io.github.cyfko</groupId>
     <artifactId>dverify</artifactId>
-    <version>3.0.2</version>
+    <version>3.0.3</version>
 </dependency>
 ```
 
 For **Gradle**:
 ```gradle
-implementation 'io.github.cyfko:dverify:3.0.2'
+implementation 'io.github.cyfko:dverify:3.0.3'
 ```
 
 ### 2. Environment Variables (Optional)
@@ -105,8 +105,6 @@ This is particularly useful for:
 - Lightweight deployments without Kafka or messaging systems.
 - Architectures using **sharded database clusters** (e.g., by tenant, region, or service).
 - Centralized monoliths storing verification messages directly in a trusted SQL store.
-
----
 
 #### Example: `DatabaseBroker` Implementation
 
