@@ -169,7 +169,6 @@ In sharded database or clustered setups:
 ## 📌 Requirements
 
 - Java >= 21
-- Kafka cluster running
 
 ---
 
