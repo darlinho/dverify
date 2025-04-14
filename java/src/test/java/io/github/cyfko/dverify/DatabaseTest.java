@@ -23,9 +23,12 @@ public abstract class DatabaseTest {
     private final JdbcDatabaseContainer<?> sqlContainer;
     private Signer signer;
     private Verifier verifier;
+    private Revoker revoker;
+    private DataSource dataSource;
 
     public DatabaseTest(JdbcDatabaseContainer<?> sqlContainer){
         this.sqlContainer = sqlContainer;
+        sqlContainer.start();
     }
 
     private DataSource createDataSource() {
@@ -34,28 +37,27 @@ public abstract class DatabaseTest {
         config.setUsername(sqlContainer.getUsername());
         config.setPassword(sqlContainer.getPassword());
         config.setDriverClassName(sqlContainer.getDriverClassName());
+        config.setMaximumPoolSize(5);  // tune per your load
         return new HikariDataSource(config);
     }
 
     @BeforeAll
-    public void setUpClass() { sqlContainer.start(); }
+    public void setUpClass() {
+        dataSource = createDataSource();
 
-    @AfterAll
-    public void tearDownClass() {
-        sqlContainer.stop();
-    }
-
-    @BeforeEach
-    public void setUp() throws IOException {
-        Broker broker = new DatabaseBroker(createDataSource(), "broker_messages");
+        Broker broker = new DatabaseBroker(dataSource, "broker_messages");
         GenericSignerVerifier genericSignerVerifier = new GenericSignerVerifier(broker);
         signer = genericSignerVerifier;
         verifier = genericSignerVerifier;
+        revoker = genericSignerVerifier;
     }
 
-    @AfterEach
-    public void tearDown() {
-
+    @AfterAll
+    public void tearDownClass() {
+        if (dataSource instanceof HikariDataSource) {
+            ((HikariDataSource) dataSource).close();
+        }
+        sqlContainer.stop();
     }
 
     @ParameterizedTest()
@@ -130,6 +132,34 @@ public abstract class DatabaseTest {
         UserData data = new UserData("john.doe@example.com");
         String token = signer.sign(data, 1, mode, mode.name().hashCode() + 6); // Token with short duration
         Thread.sleep(3000); // Wait 3 seconds for the token to expire
+
+        assertThrows(DataExtractionException.class, () -> verifier.verify(token, UserData.class));
+    }
+
+    @ParameterizedTest()
+    @EnumSource(value = TokenMode.class)
+    public void verify_revoked_token_should_throws_exception(TokenMode mode) throws InterruptedException {
+        UserData data = new UserData("john.doe@example.com");
+        String token = signer.sign(data, 3600, mode, mode.name().hashCode() + 7); // Token with long duration (1 hour)
+        Thread.sleep(2000); // Wait 2 seconds before issuing the revocation command
+
+        revoker.revoke(token);
+        Thread.sleep(2000); // Wait 2 seconds to ensure revocation took place
+
+        assertThrows(DataExtractionException.class, () -> verifier.verify(token, UserData.class));
+    }
+
+    @ParameterizedTest()
+    @EnumSource(value = TokenMode.class)
+    public void verify_revoked_token_by_tracked_id_should_throws_exception(TokenMode mode) throws InterruptedException {
+        UserData data = new UserData("john.doe@example.com");
+        final long trackingId = mode.name().hashCode() + 8;
+
+        String token = signer.sign(data, 3600, mode, trackingId); // Token with long duration (1 hour)
+        Thread.sleep(2000); // Wait 2 seconds before issuing the revocation command
+
+        revoker.revoke(trackingId);
+        Thread.sleep(2000); // Wait 2 seconds to ensure revocation took place
 
         assertThrows(DataExtractionException.class, () -> verifier.verify(token, UserData.class));
     }
