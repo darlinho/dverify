@@ -1,6 +1,6 @@
 # 📦 dverify
 
-A Java implementation for signing and verifying data encoded in either JWT or UUID, secured with ECDSA keys distributed via Kafka. It relies on **[RocksDB](https://rocksdb.org/)** for persistence and automatic key rotation, ensuring ultra-fast verification and robust security.
+A Java implementation for signing and verifying data encoded in either JWT or UUID, secured with ECDSA keys distributed via brokers. It relies on **[RocksDB](https://rocksdb.org/)** for persistence and automatic key rotation, ensuring ultra-fast verification and robust security.
 
 ---
 
@@ -8,8 +8,8 @@ A Java implementation for signing and verifying data encoded in either JWT or UU
 
 - 🔐 **JWT Signing & Verification** using ES256 (ECDSA)
 - 🔁 **Automatic Key Rotation**
-- 📬 **Public Key Distribution** via Kafka
-- 🧠 **Fast and Persistent Storage** using **[RocksDB](https://rocksdb.org/)**
+- 📬 **Public Key Distribution** via Kafka or cluster databases 
+- 🧠 **Fast and Persistent Storage** using **[RocksDB](https://rocksdb.org/)** for Kafka based implementation
 - ⚙️ **Environment-Based Configuration** with defaults.
 
 ---
