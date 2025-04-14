@@ -8,12 +8,12 @@ To ensure compatibility across programming languages, **DVerify** standardizes t
   - *[token config]*`:`*[Base64 RSA public key]*`:`*[Expiry date seconds]*`:`*[Base64 variant]*
 
   **Components:**  
-  - **[token config]:** Configuration details for the token. Current implementations accept either `jwt` or `uuid` as valid values.  
+  - **[token config]:** Configuration details for the token. Current implementations accept either `jwt` or `id` as valid values.  
   - **[Base64 RSA public key]:** Encoded RSA public key, used for verifying tokens.  
   - **[Expiry date seconds]:** Specifies the expiration time in seconds, enabling automatic removal of outdated entries.  
   - **[Base64 variant]:** Represents additional data related to the `[token config]`.  
     1. For the `jwt` *token config,* this value is optional and may be omitted.  
-    2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
+    2. For the `id` *token config,* this value contains the JWT to be verified or extracted using the public key.
 
 ## 🔐 Deterministic Unique ID Generation
 
