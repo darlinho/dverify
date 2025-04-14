@@ -27,13 +27,13 @@ For **Maven**:
 <dependency>
     <groupId>io.github.cyfko</groupId>
     <artifactId>dverify</artifactId>
-    <version>3.0.3</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 
 For **Gradle**:
 ```gradle
-implementation 'io.github.cyfko:dverify:3.0.3'
+implementation 'io.github.cyfko:dverify:4.0.0'
 ```
 
 > ⚠️ **Important Note**  
