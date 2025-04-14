@@ -1,6 +1,14 @@
 # DVerify Change Log
 
-## 4.0.0 (10/04/2025)
+## 4.2.0 (10/04/2025)
+### Feature
+* Adding `Revoker` interface to handle revoking generated tokens either by providing the token itself or its tracking ID.
+
+### Behavior Changes
+* Making `GenericSignerVerifier` implements the `Revoking` interface.
+* Making `DatabaseBroker` delete revoked tokens.
+
+## 4.1.0 (10/04/2025)
 ### Public API Changes
 * Adding `trackingId` to the interface `Signer.sign()` method to allow tracking the generated token for subsequent 
 * revocation before expiration.
