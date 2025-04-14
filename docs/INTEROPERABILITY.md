@@ -1,7 +1,7 @@
 Interoperability
 ================
 
-To ensure compatibility across programming languages, **DVerify** standardizes the data exchanged through the broker. That data should be made of a `key` and a `message` with the following format:  
+To ensure compatibility across programming languages, **DVerify** standardizes the data exchanged through a broker. That data should be made of a `key` and a `message` with the following format:  
 
 - **Key:** The broker's event key is a string that represents a unique identifier. This guarantees uniqueness and seamless integration across diverse systems.
 
