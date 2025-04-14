@@ -69,15 +69,16 @@ The application relies on the following environment variables for configuration:
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     
     Signer signer = new GenericSignerVerifier(KafkaBrokerAdapter.of(properties));
-    String jwt = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.jwt);
-    System.out.println("Generated Token: " + jwt); // output >> Generated Token: <JWT>
+    String jwt = signer.sign(new UserData("john.doe@example.com"), 15*60, TokenMode.jwt, /* tracking ID */);
     ```
 
   #### Verifying the token and extracting the data
     ```java
-    import io.github.cyfko.dverify.TokenMode;Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter()); // KafkaBrokerAdapter constructed with default properties
+    import io.github.cyfko.dverify.TokenMode;
+
+    Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter()); // KafkaBrokerAdapter constructed with default properties
     UserData userData = verifier.verify(jwt, UserData.class, TokenMode.jwt);
-    System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
+    assert userData.getEmail().equals("john.doe@example.com")
     ```
 - #### Data signature in the form of an opaque token (uuid)
 
@@ -89,15 +90,14 @@ The application relies on the following environment variables for configuration:
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     
     Signer signer = new GenericSignerVerifier(KafkaBrokerAdapter.of(properties));
-    String token = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.id);
-    System.out.println("Generated Token: " + token); // output >> Generated Token: <UUID>
+    String token = signer.sign(new UserData("john.doe@example.com"), 15*60, TokenMode.id, /* tracking ID */);
     ```
 
   #### Verifying the token and extracting the data
     ```java
     Verifier verifier = new GenericSignerVerifier(KafkaBrokerAdapter());
     UserData userData = verifier.verify(token, UserData.class);
-    System.out.println("Verified Data: " + userData.getEmail());  // output >> Verified Data: john.doe@example.com
+    assert userData.getEmail().equals("john.doe@example.com")
     ```
 
 ### 🔧 Using `GenericSignerVerifier` with a Relational database-based `Broker`
@@ -131,25 +131,24 @@ CREATE TABLE broker_messages (
 
 ```java
 import io.github.cyfko.dverify.TokenMode;
-
 import javax.sql.DataSource;
-
 import io.github.cyfko.dverify.impl.db.DatabaseBroker;
 import io.github.cyfko.dverify.GenericSignerVerifier;
 
 DataSource dataSource = // obtain via HikariCP, Spring, etc.
-        String
 tableName ="broker_messages";
 
 DatabaseBroker broker = new DatabaseBroker(dataSource, tableName);
 GenericSignerVerifier signerVerifier = new GenericSignerVerifier(broker);
 
 // Use as usual
-String jwt = signerVerifier.sign("service #1", Duration.ofHours(15), TokenMode.jwt);
-String serviceName1 = signerVerifier.verify(jwt, String.class); // Expected: serviceName1.equals("service #1")
+String jwt = signerVerifier.sign("service #1", 15*60, TokenMode.jwt, /* tracking ID */);
+String serviceName1 = signerVerifier.verify(jwt, String.class);
+assert serviceName1.equals("service #1")
 
-String uuid = signerVerifier.sign("service #2", Duration.ofHours(15), TokenMode.id);
-String serviceName2 = signerVerifier.verify(uuid, String.class); // Expected: serviceName2.equals("service #2")
+String uuid = signerVerifier.sign("service #2", 15*60, TokenMode.id, /* tracking ID */);
+String serviceName2 = signerVerifier.verify(uuid, String.class);
+assert serviceName2.equals("service #2")
 ```
 #### ⚠️ Security & Best Practices
 - The tableName is validated to prevent SQL injection. Only alphanumeric and underscores are allowed.
@@ -169,7 +168,28 @@ In sharded database or clustered setups:
 - MariaDB 11+
 - H2 (dev mode)
 
----
+## Revocation Support
+
+`dverify` provides mechanisms to revoke tokens, enhancing security by allowing invalidation of tokens before their natural expiration.
+To revoke a specific token:
+
+```java
+UserData data = new UserData("john.doe@example.com");
+long trackingId = 12345L;
+
+// Sign a token with a tracking ID
+String token = signer.sign(data, 3600, TokenMode.jwt, trackingId);
+
+// Revoke the token by its value
+revoker.revoke(token);
+
+// Alternatively, revoke the token with the tracking ID
+// revoker.revoke(trackingId);
+
+// Verification will now fail
+assertThrows(DataExtractionException.class, () -> verifier.verify(token, UserData.class));
+```
+
 
 ## 📌 Requirements
 
@@ -180,5 +200,4 @@ In sharded database or clustered setups:
 ## 🔐 Security Considerations
 
 - Uses ES256 (ECDSA with P-256 curve)
-- All public keys are stored and verified from **[RocksDB](https://rocksdb.org/)**
 - Only valid keys within the expiration window are accepted
