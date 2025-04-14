@@ -1,6 +1,24 @@
+Interoperability
+================
+
+To ensure compatibility across programming languages, **DVerify** standardizes the data exchanged through the broker. That data should be made of a `key` and a `message` with the following format:  
+
+- **Key:** The broker's event key is a string that represents a unique identifier. This guarantees uniqueness and seamless integration across diverse systems.
+
+- **Message:** Each broker's message is a string that conform to the following structure:  
+  - *[token config]*`:`*[Base64 RSA public key]*`:`*[Expiry date seconds]*`:`*[Base64 variant]*
+
+  **Components:**  
+  - **[token config]:** Configuration details for the token. Current implementations accept either `jwt` or `uuid` as valid values.  
+  - **[Base64 RSA public key]:** Encoded RSA public key, used for verifying tokens.  
+  - **[Expiry date seconds]:** Specifies the expiration time in seconds, enabling automatic removal of outdated entries.  
+  - **[Base64 variant]:** Represents additional data related to the `[token config]`.  
+    1. For the `jwt` *token config,* this value is optional and may be omitted.  
+    2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
+
 # 🔐 Deterministic Unique ID Generation
 
-This document outlines the method used to generate **deterministic**, **secure**, and **interoperable** unique identifiers from integers in the `dverify` project.
+The method used to generate **deterministic**, **secure**, and **interoperable** unique identifiers from integers in the `dverify` project.
 
 ---
 
