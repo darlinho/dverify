@@ -8,6 +8,7 @@ import io.github.cyfko.dverify.exceptions.DataExtractionException;
 import io.github.cyfko.dverify.exceptions.JsonEncodingException;
 import io.github.cyfko.dverify.impl.kafka.Constant;
 import io.github.cyfko.dverify.util.JacksonUtil;
+import io.github.cyfko.dverify.Revoker;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
@@ -45,7 +46,7 @@ import java.util.concurrent.*;
  * @author Frank KOSSI
  * @since 3.0.0
  */
-public class GenericSignerVerifier implements Signer, Verifier {
+public class GenericSignerVerifier implements Signer, Verifier, Revoker {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GenericSignerVerifier.class);
     private static final KeyFactory keyFactory;
@@ -170,6 +171,37 @@ public class GenericSignerVerifier implements Signer, Verifier {
         }
     }
 
+    @Override
+    public void revoke(Object target) {
+        if (target instanceof String token) {
+            revokeByToken(token);
+        } else if (target instanceof Number number) {
+            revokeByTrackingId(number.longValue());
+        } else {
+            throw new IllegalArgumentException("Unsupported revocation target type: " + target.getClass());
+        }
+    }
+
+    private void revokeByTrackingId(long trackingId) {
+        try {
+            String keyId = generateId(trackingId, generatedIdSalt);
+            broker.send(keyId, "");
+        } catch (Exception e) {
+            log.error("Unable to regenerate keyId from the tracking identifier {}", trackingId);
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private void revokeByToken(String token) {
+        try {
+            String keyId = getKeyId(token);
+            broker.send(keyId, "");
+        } catch (Exception e) {
+            log.error("Unable to extract keyId from the token {}", token);
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     /**
      * Determines the key identifier for a given token.
      * <p>
@@ -200,6 +232,11 @@ public class GenericSignerVerifier implements Signer, Verifier {
     private Claims getClaims(String keyId, String token) {
         String message = broker.get(keyId);
         log.info("Observed token for keyId {} is {}", keyId, message);
+
+        if (message == null) {
+            log.error("Observed token for keyId {} is null", keyId);
+            throw new DataExtractionException("The token related to the keyId " + token + " was not found");
+        }
 
         String[] parts = message.split(":");
         try {

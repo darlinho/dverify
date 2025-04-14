@@ -231,8 +231,20 @@ public class KafkaBrokerAdapter implements Broker {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10)); // At most 10 seconds to wait for.
         for (var record: records) {
             try {
-                // persist on embedded DB
-                db.put(record.key().getBytes(), record.value().getBytes());
+                String key = record.key();
+                String message = record.value();
+                if (key == null || key.isBlank() || message == null) {
+                    continue;
+                }
+
+                if (message.isBlank()){
+                    // remove this entry
+                    db.delete(key.getBytes());
+                } else {
+                    // persist on embedded DB
+                    byte[] bytes = message.getBytes();
+                    db.put(key.getBytes(), bytes);
+                }
             } catch (RocksDBException ex) {
                 log.error(ex.getMessage());
             }

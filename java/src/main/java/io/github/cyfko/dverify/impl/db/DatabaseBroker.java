@@ -137,19 +137,34 @@ public class DatabaseBroker implements Broker {
     }
 
     @Override
-    public CompletableFuture<Void> send(String key, String message) {
+    public CompletableFuture<Void> send(String keyId, String message) {
         return CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection()) {
-                String sql = String.format(
-                        "INSERT INTO %s (%s, %s) VALUES (?, ?)",
-                        tableName, COLUMN_KEY, COLUMN_MESSAGE
-                );
+                if (keyId == null || keyId.isBlank() || message == null) return;
 
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, key);
-                    stmt.setString(2, message);
-                    stmt.executeUpdate();
+                if (message.isBlank()) { // Delete the record with keyId
+                    String sql = String.format(
+                            "DELETE FROM %s WHERE %s = ?",
+                            tableName, COLUMN_KEY
+                    );
+
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, keyId);
+                        stmt.executeUpdate();
+                    }
+                } else { // save a new records with that keyId
+                    String sql = String.format(
+                            "INSERT INTO %s (%s, %s) VALUES (?, ?)",
+                            tableName, COLUMN_KEY, COLUMN_MESSAGE
+                    );
+
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, keyId);
+                        stmt.setString(2, message);
+                        stmt.executeUpdate();
+                    }
                 }
+
             } catch (SQLException e) {
                 throw new RuntimeException("Failed to store message in DB", e);
             }
