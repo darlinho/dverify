@@ -124,21 +124,8 @@ Visit tge [Go documentation](go/README.md) for more details.
 
 ---
 
-## 🔗 Interoperability  
-To ensure compatibility across programming languages, **DVerify** standardizes the broker's (e.g., Kafka) event keys and messages with the following format:  
-
-- **Event Key:** The broker's event key is a string that represents a UUID. This guarantees uniqueness and seamless integration across diverse systems.
-
-- **Message Pattern:** Each broker's message adheres to the following structure:  
-  - `[token config] : [Base64 RSA public key] : [Expiry date seconds] : [Base64 variant]`
-
-  **Components:**  
-  - **[token config]:** Configuration details for the token. Current implementations accept either `jwt` or `uuid` as valid values.  
-  - **[Base64 RSA public key]:** Encoded RSA public key, used for verifying tokens.  
-  - **[Expiry date seconds]:** Specifies the expiration time in seconds, enabling automatic removal of outdated entries.  
-  - **[Base64 variant]:** Represents additional data related to the `[token config]`.  
-    1. For the `jwt` *token config,* this value is optional and may be omitted.  
-    2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
+## 🔗 Interoperability 
+Relevant documentation for interoperability across programming languages can be found [here](docs/INTEROPERABILITY.md).
 
 ## 🛠 Contributing
 
