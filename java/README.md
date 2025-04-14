@@ -36,6 +36,10 @@ For **Gradle**:
 implementation 'io.github.cyfko:dverify:3.0.3'
 ```
 
+> ⚠️ **Important Note**  
+> Prior to API version `4`, major updates introduced breaking changes.  
+> It is strongly recommended to use version `>= 4.0.0` to ensure compatibility and stability.
+
 ### 2. Environment Variables (Optional)
 
 The application relies on the following environment variables for configuration:
