@@ -67,9 +67,7 @@ public class KafkaSignerVerifierTest {
     @EnumSource(value = TokenMode.class)
     public void sign_method_with_valid_data_should_returns_token(TokenMode mode) throws JsonEncodingException {
         UserData data = new UserData("john.doe@example.com");
-        Duration duration = Duration.ofHours(2);
-
-        String token = signer.sign(data, duration, mode);
+        String token = signer.sign(data, 60, mode, 0);
 
         assertNotNull(token);
         assertFalse(token.isEmpty());
@@ -79,27 +77,24 @@ public class KafkaSignerVerifierTest {
     @EnumSource(value = TokenMode.class)
     public void sign_method_with_invalid_data_should_throws_exception(TokenMode mode) {
         Object invalidData = null; // Simulating invalid data
-        Duration duration = Duration.ofHours(2);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, duration, mode));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, 60, mode, 0));
     }
 
     @ParameterizedTest()
     @EnumSource(value = TokenMode.class)
     public void sign_method_with_expired_duration_should_throws_exception(TokenMode mode) {
         UserData data = new UserData("john.doe@example.com");
-        Duration duration = Duration.ofMinutes(-5); // Negative duration
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(data, duration, mode));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> signer.sign(data, -5, mode, 0));
     }
 
     @ParameterizedTest()
     @EnumSource(value = TokenMode.class)
     public void sign_valid_data_should_returns_token(TokenMode mode) throws JsonEncodingException {
         UserData data = new UserData("john.doe@example.com");
-        Duration duration = Duration.ofHours(2);
 
-        String token = signer.sign(data, duration, mode);
+        String token = signer.sign(data, 60, mode, 0);
 
         assertNotNull(token, "JWT should not be null");
         assertFalse(token.isEmpty(), "JWT should not be empty");
@@ -109,16 +104,15 @@ public class KafkaSignerVerifierTest {
     @EnumSource(value = TokenMode.class)
     public void sign_invalid_data_should_throws_exception(TokenMode mode) {
         Object invalidData = null; // Simulating invalid data
-        Duration duration = Duration.ofHours(2);
 
-        assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, duration, mode));
+        assertThrows(IllegalArgumentException.class, () -> signer.sign(invalidData, 60, mode, 0));
     }
 
     @ParameterizedTest()
     @EnumSource(value = TokenMode.class)
     public void verify_valid_token_should_returns_payload(TokenMode mode) throws InterruptedException {
         UserData data = new UserData("john.doe@example.com");
-        String token = signer.sign(data, Duration.ofHours(2), mode); // Generate a valid token
+        String token = signer.sign(data, 60, mode, 0); // Generate a valid token
         Thread.sleep(5000); // Wait 5 secs to ensure that the keys has been propagated to kafka
 
         UserData verifiedData = verifier.verify(token, UserData.class);
@@ -138,7 +132,7 @@ public class KafkaSignerVerifierTest {
     @EnumSource(value = TokenMode.class)
     public void verify_expired_token_should_throws_exception(TokenMode mode) throws InterruptedException {
         UserData data = new UserData("john.doe@example.com");
-        String token = signer.sign(data, Duration.ofMillis(1), mode); // Token with short duration
+        String token = signer.sign(data, 60, mode, 0); // Token with short duration
         Thread.sleep(10); // Wait for the token to expire
 
         assertThrows(DataExtractionException.class, () -> verifier.verify(token, UserData.class));

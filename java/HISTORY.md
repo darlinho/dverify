@@ -1,5 +1,10 @@
 # DVerify Change Log
 
+## 4.0.0 (10/04/2025)
+### Public API Changes
+* Adding `trackingId` to the interface `Signer.sign()` method to allow tracking the generated token for subsequent 
+* revocation before expiration.
+
 ## 3.0.0 (10/04/2025)
 ### Public API Changes
 * Renaming interface `DataSigner` -> `Signer` and adding third parameter on the `Signer.sign()` method.

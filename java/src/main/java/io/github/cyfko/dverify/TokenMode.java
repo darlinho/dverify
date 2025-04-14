@@ -6,8 +6,8 @@ package io.github.cyfko.dverify;
  * <p>Supported modes:</p>
  * <ul>
  *   <li><strong>jwt</strong>: The token itself contains the signed data, encoded as a JWT (JSON Web Token).</li>
- *   <li><strong>uuid</strong>: Only a unique identifier (UUID) is returned as the token; the actual signed JWT is
- *   stored in an external broker and later fetched using the UUID as the key.</li>
+ *   <li><strong>id</strong>: Only a unique identifier is returned as the token; the actual signed JWT is
+ *   stored in an external broker and later fetched using the ID as the key.</li>
  * </ul>
  *
  * <p>This enum is primarily used to determine how a signed token is returned and interpreted by the consumer and
@@ -15,6 +15,6 @@ package io.github.cyfko.dverify;
  */
 public enum TokenMode {
     jwt,
-    uuid,
+    id,
 }
 

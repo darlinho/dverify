@@ -33,11 +33,12 @@ public interface Signer {
      * </p>
      *
      * @param data     the object to be signed; must not be {@code null}
-     * @param duration the duration for which the token should remain valid; must be positive
+     * @param seconds the duration in seconds for which the token should remain valid; must be positive
      * @param mode     the desired encoding mode for the token (e.g., {@code jwt}, {@code uuid})
+     * @param trackingId  a globally unique integer used to reference the generated token for traceability purposes (e.g., revocation)
      * @return a signed token as a string
      * @throws JsonEncodingException if the payload cannot be encoded or the duration is invalid
      */
-    String sign(Object data, Duration duration, TokenMode mode) throws JsonEncodingException;
+    String sign(Object data, long seconds, TokenMode mode, long trackingId) throws JsonEncodingException;
 }
 

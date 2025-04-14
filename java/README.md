@@ -85,7 +85,7 @@ The application relies on the following environment variables for configuration:
     properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     
     Signer signer = new GenericSignerVerifier(KafkaBrokerAdapter.of(properties));
-    String token = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.uuid);
+    String token = signer.sign(new UserData("john.doe@example.com"), Duration.ofHours(2), TokenMode.id);
     System.out.println("Generated Token: " + token); // output >> Generated Token: <UUID>
     ```
 
@@ -124,14 +124,18 @@ CREATE TABLE broker_messages (
 ```
 
 #### 🧠 Usage
+
 ```java
 import io.github.cyfko.dverify.TokenMode;
+
 import javax.sql.DataSource;
+
 import io.github.cyfko.dverify.impl.db.DatabaseBroker;
 import io.github.cyfko.dverify.GenericSignerVerifier;
 
 DataSource dataSource = // obtain via HikariCP, Spring, etc.
-String tableName = "broker_messages";
+        String
+tableName ="broker_messages";
 
 DatabaseBroker broker = new DatabaseBroker(dataSource, tableName);
 GenericSignerVerifier signerVerifier = new GenericSignerVerifier(broker);
@@ -140,7 +144,7 @@ GenericSignerVerifier signerVerifier = new GenericSignerVerifier(broker);
 String jwt = signerVerifier.sign("service #1", Duration.ofHours(15), TokenMode.jwt);
 String serviceName1 = signerVerifier.verify(jwt, String.class); // Expected: serviceName1.equals("service #1")
 
-String uuid = signerVerifier.sign("service #2", Duration.ofHours(15), TokenMode.uuid);
+String uuid = signerVerifier.sign("service #2", Duration.ofHours(15), TokenMode.id);
 String serviceName2 = signerVerifier.verify(uuid, String.class); // Expected: serviceName2.equals("service #2")
 ```
 #### ⚠️ Security & Best Practices
