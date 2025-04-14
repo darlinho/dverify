@@ -18,7 +18,7 @@ To ensure compatibility across programming languages, **DVerify** standardizes t
 
 # 🔐 Deterministic Unique ID Generation
 
-The method used to generate **deterministic**, **secure**, and **interoperable** unique identifiers from integers in the `dverify` project.
+**DVerify** uses a **deterministic**, **secure**, and **interoperable** generator of unique identifiers for broker's message keys from integers in the `dverify` project.
 
 ---
 
