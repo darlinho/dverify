@@ -122,10 +122,8 @@ A Go implementation is in development.
 
 Visit tge [Go documentation](go/README.md) for more details.
 
----
-
 ## 🔗 Interoperability 
-Relevant documentation for interoperability across programming languages can be found [here](docs/INTEROPERABILITY.md).
+Relevant documentation for interoperability consideration across programming languages can be found [here](docs/INTEROPERABILITY.md).
 
 ## 🛠 Contributing
 
