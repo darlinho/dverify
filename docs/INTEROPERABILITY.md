@@ -1,11 +1,10 @@
 Interoperability
 ================
 
-To ensure compatibility across programming languages, **DVerify** standardizes the data exchanged through a broker. That data should be made of a `key` and a `message` with the following format:  
+To ensure compatibility across programming languages, **DVerify** standardizes the events exchanged through a broker. That event should be made of a `key` and a `message` with the following format:  
 
 - **Key:** The broker's event key is a string that represents a unique identifier. This guarantees uniqueness and seamless integration across diverse systems.
-
-- **Message:** Each broker's message is a string that conform to the following structure:  
+- **Message:** The broker's event message is a string that conform to the following structure:  
   - *[token config]*`:`*[Base64 RSA public key]*`:`*[Expiry date seconds]*`:`*[Base64 variant]*
 
   **Components:**  
@@ -16,13 +15,13 @@ To ensure compatibility across programming languages, **DVerify** standardizes t
     1. For the `jwt` *token config,* this value is optional and may be omitted.  
     2. For the `uuid` *token config,* this value contains the JWT to be verified or extracted using the public key.
 
-# 🔐 Deterministic Unique ID Generation
+## 🔐 Deterministic Unique ID Generation
 
-**DVerify** uses a **deterministic**, **secure**, and **interoperable** generator of unique identifiers for broker's message keys from integers in the `dverify` project.
+**DVerify** uses a **deterministic**, **secure**, and **interoperable** generator of unique identifiers for broker's event keys from integers.
 
 ---
 
-## ✨ Goals
+### ✨ Goals
 
 - Same integer input → always same output (deterministic)
 - Different inputs → different outputs (unique)
@@ -32,7 +31,7 @@ To ensure compatibility across programming languages, **DVerify** standardizes t
 
 ---
 
-## 🔧 Approach
+### 🔧 Approach
 
 We use a **SHA-256 hash** of the input integer combined with a static salt, then encode the hash using **Base64 URL-safe encoding**, truncated to **22 characters** (≈132 bits of entropy).
 
@@ -44,7 +43,7 @@ This ensures:
 
 ---
 
-## 📌 Formula
+### 📌 Formula
 
 ```text
 input:      int → e.g. 42
@@ -54,7 +53,7 @@ digest:     SHA-256 hash of string
 output:     first 22 characters of Base64 URL-encoded hash (no padding)
 ```
 
-## 🎯 Example
+### 🎯 Example
 
 For input `42` and salt `"secure-app"`, the output is:
 
@@ -62,7 +61,7 @@ For input `42` and salt `"secure-app"`, the output is:
 ei83cNELeBwvF5e_y50GmQ
 ```
 
-## 🌐 Language Implementations
+### 🌐 Language Implementations
 
 All implementations produce the same output for the same inputs.
 
@@ -156,3 +155,10 @@ fn generate_short_id(n: i32, salt: &str) -> String {
     b64url[..22].to_string()
 }
 ```
+
+## 🚫 Token Revocation
+Revoking the validity of a token should be made by sending a broker event with the key as the unique ID of the token to revoke and the associated message with an empty value:
+- key == `[The unique ID of the token to revoke]`
+- message = `""` (*empty*)
+
+All receiving sites should consider the targeted token as invalid after receiving that broker's event.
