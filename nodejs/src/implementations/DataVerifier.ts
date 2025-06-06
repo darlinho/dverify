@@ -3,6 +3,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { open } from 'lmdb';
 import crypto from 'crypto';
 import { config } from '../config';
+import type { DataVerifier as IDataVerifier } from '../types/DataVerifier';
 import {
   InvalidTokenException,
   KeyNotFoundException,
@@ -28,7 +29,7 @@ export interface KeyRecord {
  * DataVerifier is responsible for verifying JWT tokens signed with ES256,
  * retrieving public keys from Kafka, and storing them locally in LMDB.
  */
-export class DataVerifier {
+export class DataVerifier implements IDataVerifier {
   private db: any;                   // LMDB instance
   private mainConsumer: Consumer;    // Kafka consumer for real-time updates
   private readonly broker: string;   // Kafka broker address
